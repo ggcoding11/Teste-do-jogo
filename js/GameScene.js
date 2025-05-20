@@ -47,6 +47,24 @@ class GameScene extends Phaser.Scene {
 
     this.enemies = this.physics.add.group();
 
+    const phaseText = this.add.text(this.scale.width / 2, this.scale.height - 280, 'Fase 1 - ORGULHO', {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '20px',
+      color: '#ffffff',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 20, y: 10 }
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    this.time.delayedCall(3000, () => {
+      this.tweens.add({
+        targets: phaseText,
+        alpha: 0, // Faz o texto desaparecer
+        duration: 1000, // Suaviza a transição em 1 segundo
+        onComplete: () => phaseText.destroy() // Remove o objeto
+      });
+    });
+
+
     this.waveText = this.add.text(width / 2, 16, `Onda: ${this.wave}`, {
       fontFamily: '"Press Start 2P"',
       fontSize: '24px',
