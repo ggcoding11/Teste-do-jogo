@@ -6,6 +6,6 @@ const config = {
     default: 'arcade',
     arcade: { gravity: { y: 0 }, debug: false }
   },
-  scene: [ TitleScene, GameScene ]
+  scene: [LoadingScene, TitleScene, GameScene],
 };
 new Phaser.Game(config);

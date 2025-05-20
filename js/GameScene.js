@@ -21,12 +21,16 @@ class GameScene extends Phaser.Scene {
     this.load.image('enemy2', 'assets/enemy2.png');
     this.load.image('enemy3', 'assets/enemy3.png');
     this.load.image('rastro', 'assets/rastro.png');
+    this.load.audio('musica_fase1', 'assets/musica-fase1.mp3');
   }
 
   create() {
     console.log("GameScene carregada!"); // Mensagem de teste
     const { width, height } = this.sys.game.config;
     const mapSize = 3000;
+
+    this.fase1Music = this.sound.add('musica_fase1', { loop: true, volume: 0.5 });
+    this.fase1Music.play();
 
     this.add.tileSprite(0, 0, mapSize, mapSize, 'fase1_bg').setOrigin(0);
     this.physics.world.setBounds(0, 0, mapSize, mapSize);
@@ -131,7 +135,7 @@ class GameScene extends Phaser.Scene {
   startWave() {
     this.waveText.setText(`Onda: ${this.wave}`);
 
-    const count = this.wave * 10; // Aumentando para 12 inimigos por onda
+    const count = this.wave * 20; // Aumentando para 12 inimigos por onda
     for (let i = 0; i < count; i++) {
       this.spawnEnemyOutsideView();
     }
