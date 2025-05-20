@@ -107,13 +107,13 @@ class GameScene extends Phaser.Scene {
 
   takeDamage(player, enemy) {
     const now = this.time.now;
-    if (now - this.lastDamageTime < this.invulnerabilityCooldown) return; // Reduzido para ativar mais rápido
+    if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
 
     const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
-    if (dist > 20) return; // Somente causa dano se estiver a menos de 20px de distância
+    if (dist > 20) return;
 
     this.lastDamageTime = now;
-    this.playerHealth = Math.max(0, this.playerHealth - 5);
+    this.playerHealth = Math.max(0, this.playerHealth - enemy.damage); // Dano baseado no tipo de inimigo
     this.updateHPBar();
 
     if (this.playerHealth <= 0) {
@@ -123,7 +123,7 @@ class GameScene extends Phaser.Scene {
     this.tweens.add({
       targets: this.player,
       tint: 0xFF0000,
-      duration: 100, // Reduz a duração do piscar
+      duration: 100,
       yoyo: true,
       onComplete: () => {
         this.player.clearTint();
@@ -167,9 +167,9 @@ class GameScene extends Phaser.Scene {
     }
 
     const enemyStats = {
-      enemy1: { health: 250, speed: 120 }, // Velocidade maior
-      enemy2: { health: 400, speed: 100 },
-      enemy3: { health: 600, speed: 80 }
+      enemy1: { health: 250, speed: 160, damage: 10 }, // Inimigo rápido, menos dano
+      enemy2: { health: 400, speed: 120, damage: 20 }, // Inimigo médio, dano médio
+      enemy3: { health: 600, speed: 80, damage: 30 } // Inimigo lento, mas causa muito dano
     };
 
     const key = Phaser.Math.RND.pick(Object.keys(enemyStats));
@@ -292,7 +292,13 @@ class GameScene extends Phaser.Scene {
     this.enemies.getChildren().forEach(e => {
       const vecE = new Phaser.Math.Vector2(this.player.x - e.x, this.player.y - e.y)
         .normalize().scale(e.speed);
+
       e.setVelocity(vecE.x, vecE.y);
+
+      // Inimigos mais difíceis podem ter comportamento especial
+      if (e.damage > 20 && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 100) {
+        e.setTint(0xff0000); // Fica vermelho quando se aproxima, como alerta
+      }
     });
   }
 }
