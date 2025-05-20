@@ -129,10 +129,9 @@ class GameScene extends Phaser.Scene {
 
 
   startWave() {
-    this.enemies.clear(true, true);
     this.waveText.setText(`Onda: ${this.wave}`);
 
-    const count = this.wave * 8;
+    const count = this.wave * 10; // Aumentando para 12 inimigos por onda
     for (let i = 0; i < count; i++) {
       this.spawnEnemyOutsideView();
     }
@@ -150,9 +149,11 @@ class GameScene extends Phaser.Scene {
   spawnEnemyOutsideView() {
     const cam = this.cameras.main;
     const view = cam.worldView;
-    const margin = 100;
+    const margin = 200; // Aumentando margem para criar mais longe
 
-    let x, y;
+    let x = Phaser.Math.Between(view.x - margin, view.x + view.width + margin);
+    let y = Phaser.Math.Between(view.y - margin, view.y + view.height + margin);
+
     const side = Phaser.Math.Between(0, 3);
     switch (side) {
       case 0: x = view.x - margin; y = Phaser.Math.Between(view.y - margin, view.y + view.height + margin); break;
@@ -162,9 +163,9 @@ class GameScene extends Phaser.Scene {
     }
 
     const enemyStats = {
-      enemy1: { health: 250, speed: 100 },
-      enemy2: { health: 400, speed: 80 },
-      enemy3: { health: 600, speed: 60 }
+      enemy1: { health: 250, speed: 120 }, // Velocidade maior
+      enemy2: { health: 400, speed: 100 },
+      enemy3: { health: 600, speed: 80 }
     };
 
     const key = Phaser.Math.RND.pick(Object.keys(enemyStats));
