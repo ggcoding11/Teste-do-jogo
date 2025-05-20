@@ -135,11 +135,23 @@ class GameScene extends Phaser.Scene {
   startWave() {
     this.waveText.setText(`Onda: ${this.wave}`);
 
-    const count = this.wave * 20; // Aumentando para 12 inimigos por onda
-    for (let i = 0; i < count; i++) {
-      this.spawnEnemyOutsideView();
-    }
+    // Define a duração da onda
+    this.waveEndTime = this.time.now + this.waveDuration;
 
+    // Geração contínua de inimigos durante a onda
+    this.time.addEvent({
+      delay: 1000, // A cada 1 segundo, gera inimigos
+      callback: () => {
+        if (this.time.now < this.waveEndTime) {
+          for (let i = 0; i < 5; i++) { // Gera vários inimigos por vez
+            this.spawnEnemyNearby();
+          }
+        }
+      },
+      loop: true // Continua executando até o tempo da onda acabar
+    });
+
+    // Troca para a próxima onda automaticamente
     this.time.delayedCall(this.waveDuration, () => {
       if (this.wave < this.maxWaves) {
         this.wave++;
@@ -150,26 +162,18 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  spawnEnemyOutsideView() {
-    const cam = this.cameras.main;
-    const view = cam.worldView;
-    const margin = 200; // Aumentando margem para criar mais longe
+  spawnEnemyNearby() {
+    const minDistance = 600; // Distância mínima para spawn (não gera perto do jogador)
+    const maxDistance = 1200; // Distância máxima
 
-    let x = Phaser.Math.Between(view.x - margin, view.x + view.width + margin);
-    let y = Phaser.Math.Between(view.y - margin, view.y + view.height + margin);
-
-    const side = Phaser.Math.Between(0, 3);
-    switch (side) {
-      case 0: x = view.x - margin; y = Phaser.Math.Between(view.y - margin, view.y + view.height + margin); break;
-      case 1: x = view.x + view.width + margin; y = Phaser.Math.Between(view.y - margin, view.y + view.height + margin); break;
-      case 2: x = Phaser.Math.Between(view.x - margin, view.x + view.width + margin); y = view.y - margin; break;
-      default: x = Phaser.Math.Between(view.x - margin, view.x + view.width + margin); y = view.y + margin;
-    }
+    let angle = Phaser.Math.FloatBetween(0, Math.PI * 2); // Gera um ângulo aleatório
+    let x = this.player.x + Math.cos(angle) * Phaser.Math.Between(minDistance, maxDistance);
+    let y = this.player.y + Math.sin(angle) * Phaser.Math.Between(minDistance, maxDistance);
 
     const enemyStats = {
-      enemy1: { health: 250, speed: 160, damage: 10 }, // Inimigo rápido, menos dano
-      enemy2: { health: 400, speed: 120, damage: 20 }, // Inimigo médio, dano médio
-      enemy3: { health: 600, speed: 80, damage: 30 } // Inimigo lento, mas causa muito dano
+      enemy1: { health: 250, speed: 130, damage: 10 },
+      enemy2: { health: 400, speed: 120, damage: 20 },
+      enemy3: { health: 600, speed: 80, damage: 30 }
     };
 
     const key = Phaser.Math.RND.pick(Object.keys(enemyStats));
@@ -181,7 +185,7 @@ class GameScene extends Phaser.Scene {
 
     e.health = stats.health;
     e.speed = stats.speed;
-    e.setCircle(e.width * 0.3); // Reduz a área de colisão para que o inimigo precise estar bem próximo
+    e.damage = stats.damage;
   }
 
   checkEnemiesInRange() {
