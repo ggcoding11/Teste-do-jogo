@@ -43,7 +43,7 @@ class GameScene extends Phaser.Scene {
       padding: { x: 10, y: 5 }
     }).setOrigin(0.5, 0).setScrollFactor(0);
 
-    this.attackRadius = this.add.circle(this.player.x, this.player.y, 150, 0xFF0000, 0.2);
+    this.attackRadius = this.add.circle(this.player.x, this.player.y, 80, 0xFF0000, 0.2);
 
     this.startWave();
   }
