@@ -1,14 +1,20 @@
 class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
-    this.wave = 1;
-    this.maxWaves = 8; // Agora temos 8 ondas em vez de 5
-    this.waveDuration = 30000;
-    this.attackCooldown = 1000;
-    this.lastAttackTime = 0;
+    this.wave = 1;  // Inicia a primeira onda
+    this.maxWaves = 8;  // Número máximo de ondas
+    this.waveDuration = 30000;  // Duração de cada onda (30 segundos)
+    this.attackCooldown = 1000;  // Tempo mínimo entre ataques (1 segundo)
+    this.lastAttackTime = 0;  // Guarda o último tempo de ataque
+    this.playerHealth = 100; // HP inicial
+    this.maxHealth = 100; // HP máximo
+    this.invulnerabilityCooldown = 200; // Agora o tempo entre danos será 0.2 segundos
+    this.lastDamageTime = 0; // Guarda o último tempo em que o jogador foi atingido
+
   }
 
   preload() {
+    //Aqui é onde eu vou loadar as imagens
     this.load.image('fase1_bg', 'assets/fase1.png');
     this.load.image('player', 'assets/player.png');
     this.load.image('enemy1', 'assets/enemy1.png');
@@ -18,7 +24,7 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
-    console.log("GameScene carregada!"); // Teste de inicialização
+    console.log("GameScene carregada!"); // Mensagem de teste
     const { width, height } = this.sys.game.config;
     const mapSize = 3000;
 
@@ -31,6 +37,7 @@ class GameScene extends Phaser.Scene {
       .setCollideWorldBounds(true);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
+    //Estabelece o controle pelo W,A,S,D
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D');
 
@@ -44,10 +51,82 @@ class GameScene extends Phaser.Scene {
       padding: { x: 10, y: 5 }
     }).setOrigin(0.5, 0).setScrollFactor(0);
 
-    this.attackRadius = this.add.circle(this.player.x, this.player.y, 60, 0xFF0000, 0.2);
+    this.attackRadius = this.add.circle(this.player.x, this.player.y, 150, 0xFF0000, 0); // Opacidade 0 (transparente)
+    this.attackRadius.setAlpha(0); // Torna invisível
+
+    this.hpBarBackground = this.add.rectangle(20, 20, 200, 20, 0x444444)
+      .setOrigin(0, 0)
+      .setScrollFactor(0); // Fixa no canto da tela
+
+    this.hpBar = this.add.rectangle(20, 20, 200, 20, 0xFF0000)
+      .setOrigin(0, 0)
+      .setScrollFactor(0); // Barra vermelha da vida
+
+    this.hpText = this.add.text(20, 5, `HP: 100%`, {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '16px',
+      color: '#ffffff'
+    }).setOrigin(0, 0).setScrollFactor(0);
+
+    this.physics.add.overlap(this.player, this.enemies, this.takeDamage, null, this);
 
     this.startWave();
   }
+
+  updateHPBar() {
+    const hpPercentage = Math.floor((this.playerHealth / this.maxHealth) * 100);
+    this.hpBar.width = 200 * (hpPercentage / 100); // Ajusta a largura da barra de HP
+    this.hpText.setText(`HP: ${hpPercentage}%`); // Atualiza a legenda
+  }
+
+
+  applyDamage(enemy) {
+    const damage = Phaser.Math.Between(10, 30);
+    enemy.health -= damage;
+    this.showFloatingDamage(enemy.x, enemy.y, damage);
+
+    if (enemy.health <= 0) {
+      enemy.destroy();
+    }
+
+    this.playerHealth -= 5; // O jogador perde vida ao ser atingido
+    if (this.playerHealth <= 0) {
+      console.log("Game Over!"); // Pode implementar algo para reiniciar
+    }
+
+    if (Phaser.Math.Distance.Between(trail.x, trail.y, enemy.x, enemy.y) < 80) { // Raio menor para dano
+      this.applyDamage(enemy);
+    }
+
+    this.updateHPBar(); // Atualiza a barra de HP
+  }
+
+  takeDamage(player, enemy) {
+    const now = this.time.now;
+    if (now - this.lastDamageTime < this.invulnerabilityCooldown) return; // Reduzido para ativar mais rápido
+
+    const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
+    if (dist > 20) return; // Somente causa dano se estiver a menos de 20px de distância
+
+    this.lastDamageTime = now;
+    this.playerHealth = Math.max(0, this.playerHealth - 5);
+    this.updateHPBar();
+
+    if (this.playerHealth <= 0) {
+      console.log("Game Over!");
+    }
+
+    this.tweens.add({
+      targets: this.player,
+      tint: 0xFF0000,
+      duration: 100, // Reduz a duração do piscar
+      yoyo: true,
+      onComplete: () => {
+        this.player.clearTint();
+      }
+    });
+  }
+
 
   startWave() {
     this.enemies.clear(true, true);
@@ -97,6 +176,7 @@ class GameScene extends Phaser.Scene {
 
     e.health = stats.health;
     e.speed = stats.speed;
+    e.setCircle(e.width * 0.3); // Reduz a área de colisão para que o inimigo precise estar bem próximo
   }
 
   checkEnemiesInRange() {
@@ -120,7 +200,7 @@ class GameScene extends Phaser.Scene {
 
     const trail = this.physics.add.image(this.player.x, this.player.y, 'rastro')
       .setAlpha(0.8)
-      .setScale(0.2);
+      .setScale(0.1); // Reduzindo o tamanho do sprite
 
     const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, closestEnemy.x, closestEnemy.y);
     trail.setRotation(angle);
@@ -136,10 +216,11 @@ class GameScene extends Phaser.Scene {
       x: closestEnemy.x,
       y: closestEnemy.y,
       alpha: 0,
-      duration: 200,
+      duration: 250, // Aumentando o tempo para atingir inimigos mais longe
       ease: 'Linear',
-      onComplete: () => trail.destroy() // Agora o dano ocorre antes da destruição
+      onComplete: () => trail.destroy()
     });
+
   }
 
   applyDamage(enemy) {
@@ -177,7 +258,7 @@ class GameScene extends Phaser.Scene {
 
     this.enemies.getChildren().forEach(enemy => {
       const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
-      if (dist < 120 && dist < minDist) {
+      if (dist < 180 && dist < minDist) {
         closest = enemy;
         minDist = dist;
       }
@@ -189,6 +270,8 @@ class GameScene extends Phaser.Scene {
   update() {
     this.attackRadius.setPosition(this.player.x, this.player.y);
     this.checkEnemiesInRange();
+
+    this.updateHPBar();
 
     const speed = 200;
     const dirX = this.cursors.left.isDown || this.keys.A.isDown ? -1
