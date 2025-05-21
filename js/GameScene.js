@@ -3,7 +3,7 @@ class GameScene extends Phaser.Scene {
     super("GameScene");
     this.wave = 1; // Inicia a primeira onda
     this.maxWaves = 8; // Número máximo de ondas
-    this.waveDuration = 20000; // Duração de cada onda (30 segundos)
+    this.waveDuration = 30000; // Duração de cada onda (30 segundos)
     this.attackCooldown = 1000; // Tempo mínimo entre ataques (1 segundo)
     this.lastAttackTime = 0; // Guarda o último tempo de ataque
     this.playerHealth = 100; // HP inicial
@@ -271,7 +271,7 @@ class GameScene extends Phaser.Scene {
 
     // Geração contínua de inimigos durante a onda
     this.time.addEvent({
-      delay: 2000, // A cada 1 segundo, gera inimigos
+      delay: 1000, // A cada 1 segundo, gera inimigos
       callback: () => {
         if (this.time.now < this.waveEndTime) {
           for (let i = 0; i < 5; i++) {
