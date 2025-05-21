@@ -4,7 +4,7 @@ class GameScene extends Phaser.Scene {
     this.wave = 1; // Inicia a primeira onda
     this.maxWaves = 5; // Número máximo de ondas
     this.waveDuration = 30000; // Duração de cada onda (30 segundos)
-    this.attackCooldown = 1000; // Tempo mínimo entre ataques (1 segundo)
+    this.attackCooldown = 1500; // Tempo mínimo entre ataques (1 segundo)
     this.lastAttackTime = 0; // Guarda o último tempo de ataque
     this.playerHealth = 100; // HP inicial
     this.maxHealth = 100; // HP máximo
@@ -19,7 +19,7 @@ class GameScene extends Phaser.Scene {
       { name: "Mais Dano", effect: () => (this.damageBonus += 15) },
       {
         name: "Velocidade de Ataque",
-        effect: () => (this.attackCooldown *= 0.8),
+        effect: () => (this.attackCooldown *= 0.6),
       },
       { name: "Vida Máxima Aumentada", effect: () => (this.maxHealth += 20) },
       { name: "Regeneração de HP", effect: () => (this.regenHP += 0.5) },
@@ -97,7 +97,8 @@ class GameScene extends Phaser.Scene {
         padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5, 0)
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(1000);
 
     this.attackRadius = this.add.circle(
       this.player.x,
@@ -190,6 +191,12 @@ class GameScene extends Phaser.Scene {
     const all = Phaser.Utils.Array.Shuffle(this.upgrades.slice());
     const upgradeChoices = all.slice(0, 3);
 
+    this.physics.world.pause();
+    this.time.paused = true;
+
+    // 2) Disable player controls
+    this.input.keyboard.enabled = false;
+
     // Exibir escolhas na tela
     this.showUpgradeOptions(upgradeChoices);
 
@@ -220,6 +227,10 @@ class GameScene extends Phaser.Scene {
       option.on("pointerdown", () => {
         upgrade.effect();
         menu.destroy(true);
+
+        this.physics.world.resume();
+        this.time.paused = false;
+        this.input.keyboard.enabled = true;
       });
 
       menu.add(option);
@@ -464,7 +475,7 @@ class GameScene extends Phaser.Scene {
       if (
         e.damage > 20 &&
         Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) <
-          100
+        100
       ) {
         e.setTint(0xff0000);
       }
