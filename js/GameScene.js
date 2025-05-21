@@ -108,29 +108,29 @@ class GameScene extends Phaser.Scene {
       .setDepth(1000);
 
     // HUD: HP
-    this.hpBarBackground = this.add.rectangle(20, 20, 200, 20, 0x444444).setOrigin(0).setScrollFactor(0);
-    this.hpBar = this.add.rectangle(20, 20, 200, 20, 0xff0000).setOrigin(0).setScrollFactor(0);
+    this.hpBarBackground = this.add.rectangle(20, 20, 200, 20, 0x444444).setOrigin(0).setScrollFactor(0).setDepth(1000);
+    this.hpBar = this.add.rectangle(20, 20, 200, 20, 0xff0000).setOrigin(0).setScrollFactor(0).setDepth(1000);
     this.hpText = this.add.text(20, 5, `HP: 100%`, {
       fontFamily: '"Press Start 2P"',
       fontSize: "16px",
       color: "#ffffff"
-    }).setOrigin(0).setScrollFactor(0);
+    }).setOrigin(0).setScrollFactor(0).setDepth(1000);
 
     // HUD: XP
-    this.xpBarBackground = this.add.rectangle(20, 60, 200, 10, 0x444444).setOrigin(0).setScrollFactor(0);
-    this.xpBar = this.add.rectangle(20, 60, 200, 10, 0x00ff00).setOrigin(0).setScrollFactor(0);
+    this.xpBarBackground = this.add.rectangle(20, 60, 200, 10, 0x444444).setOrigin(0).setScrollFactor(0).setDepth(1000);
+    this.xpBar = this.add.rectangle(20, 60, 200, 10, 0x00ff00).setOrigin(0).setScrollFactor(0).setDepth(1000);
     this.xpText = this.add.text(20, 45, `XP: 0/${this.xpToNextLevel}`, {
       fontFamily: '"Press Start 2P"',
       fontSize: "16px",
       color: "#ffffff"
-    }).setOrigin(0).setScrollFactor(0);
+    }).setOrigin(0).setScrollFactor(0).setDepth(1000);
 
     // HUD: Level
     this.levelText = this.add.text(20, 75, `Level: ${this.level}`, {
       fontFamily: '"Press Start 2P"',
       fontSize: "16px",
       color: "#ffffff"
-    }).setScrollFactor(0);
+    }).setScrollFactor(0).setDepth(1000);
 
     this.updateHPBar();
     this.updateXPBar();
@@ -252,6 +252,24 @@ class GameScene extends Phaser.Scene {
     btn.on("pointerdown", () => {
       if (this.fase1Music) this.fase1Music.stop();
       this.scene.restart(); // dispara init()+preload()+create()
+    });
+
+    const menuBtn = this.add
+      .text(width / 2, height / 2 + 100, "Voltar ao Menu", {
+        fontFamily: '"Press Start 2P"',
+        fontSize: "24px",
+        color: "#ffffff",
+        backgroundColor: "rgba(0,0,0,0.7)",
+        padding: { x: 20, y: 10 }
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(1000)
+      .setInteractive();
+
+    menuBtn.on("pointerdown", () => {
+      if (this.fase1Music) this.fase1Music.stop();
+      this.scene.start("TitleScene");  // vai para a cena de título
     });
 
     this.physics.world.pause();
