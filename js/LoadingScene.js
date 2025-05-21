@@ -30,6 +30,7 @@ class LoadingScene extends Phaser.Scene {
         this.load.image('enemy2', 'assets/enemy2.png');
         this.load.image('enemy3', 'assets/enemy3.png');
         this.load.image('rastro', 'assets/rastro.png');
+        this.load.image("projectil", "assets/projetil.png");
     }
 
     create() {

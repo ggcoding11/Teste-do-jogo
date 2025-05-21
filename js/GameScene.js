@@ -39,6 +39,7 @@ class GameScene extends Phaser.Scene {
     this.load.image("enemy2", "assets/enemy2.png");
     this.load.image("enemy3", "assets/enemy3.png");
     this.load.image("rastro", "assets/rastro.png");
+    this.load.image("projectil", "assets/projetil.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
   }
 
@@ -46,6 +47,8 @@ class GameScene extends Phaser.Scene {
     console.log("GameScene carregada!"); // Mensagem de teste
     const { width, height } = this.sys.game.config;
     const mapSize = 3000;
+
+    this.projectiles = this.physics.add.group();
 
     this.fase1Music = this.sound.add("musica_fase1", {
       loop: true,
@@ -165,6 +168,18 @@ class GameScene extends Phaser.Scene {
       this
     );
 
+    this.time.addEvent({
+      delay: 2000, // A cada 2 segundos
+      loop: true,
+      callback: () => {
+        this.enemies.getChildren().forEach((enemy) => {
+          if (enemy.texture.key === "enemy3") {
+            this.shootProjectile(enemy);
+          }
+        });
+      },
+    });
+
     this.startWave();
   }
 
@@ -206,6 +221,27 @@ class GameScene extends Phaser.Scene {
     );
 
     this.levelText.setText(`Level: ${this.level}`);
+  }
+
+  shootProjectile(enemy) {
+    const projectile = this.projectiles.create(enemy.x, enemy.y, "projectil").setScale(0.05);
+
+    const speedFactor = 0.4;
+    const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+
+    // Adicionando um pequeno desvio no ângulo para evitar sobreposição exata
+    const angleVariation = Phaser.Math.FloatBetween(-0.2, 0.2);
+    const finalAngle = angle + angleVariation;
+
+    projectile.setVelocity(
+      Math.cos(finalAngle) * speedFactor * 500, // Multiplica pelo fator de velocidade
+      Math.sin(finalAngle) * speedFactor * 500
+    );
+
+    this.physics.add.overlap(this.player, projectile, () => {
+      this.takeDamage(this.player, enemy);
+      projectile.destroy();
+    });
   }
 
   showUpgradeOptions(choices) {
