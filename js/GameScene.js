@@ -184,7 +184,7 @@ class GameScene extends Phaser.Scene {
   subirDeNivel() {
     this.level++;
     this.playerXP = 0;
-    this.xpToNextLevel += 50; // Aumenta a dificuldade progressivamente
+    this.xpToNextLevel += Math.floor(100 * Math.pow(1.2, this.level - 1)); // Aumenta a dificuldade progressivamente
     console.log(`Você subiu para o nível ${this.level}!`);
 
     const all = Phaser.Utils.Array.Shuffle(this.upgrades.slice());
@@ -387,7 +387,7 @@ class GameScene extends Phaser.Scene {
 
     if (enemy.health <= 0) {
       enemy.destroy();
-      this.ganharXP(20); // Cada inimigo morto dá 20 XP
+      this.ganharXP(10 + this.wave * 2); // Cada inimigo morto dá 20 XP
     }
   }
 
