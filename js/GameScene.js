@@ -40,6 +40,9 @@ class GameScene extends Phaser.Scene {
     this.load.image("enemy2", "assets/enemy2.png");
     this.load.image("enemy3", "assets/enemy3.png");
     this.load.image("rastro", "assets/rastro.png");
+    this.load.spritesheet('evilWizard', 'assets/evil-wizard.png', { frameWidth: 32, frameHeight: 48 });
+    this.load.image('fireball', 'assets/fireball.png');
+    this.load.image('minion', 'assets/minion.png');
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
   }
 
@@ -174,6 +177,86 @@ class GameScene extends Phaser.Scene {
     const choices = Phaser.Utils.Array.Shuffle(this.upgrades.slice()).slice(0, 3);
     this.showUpgradeOptions(choices);
     this.levelText.setText(`Level: ${this.level}`);
+
+    if (this.level === 2) {
+      this.spawnBoss();
+    }
+  }
+
+  spawnBoss() {
+    const mapSize = 3000;
+    this.boss = this.physics.add.sprite(mapSize / 2 + 200, mapSize / 2, 'evilWizard')
+      .setScale(2)
+      .setCollideWorldBounds(true);
+    this.boss.health = 500;
+    this.boss.lastAttack = 0;
+    this.boss.attackCooldown = 2000;
+    this.boss.phase = 0;
+
+    // Grupos
+    this.fireballs = this.physics.add.group();
+    this.minions = this.physics.add.group();
+
+    // Animações
+    this.anims.create({
+      key: 'boss_idle',
+      frames: this.anims.generateFrameNumbers('evilWizard', { start: 0, end: 7 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: 'boss_attack',
+      frames: this.anims.generateFrameNumbers('evilWizard', { start: 16, end: 23 }),
+      frameRate: 10,
+      repeat: -1
+    });
+
+    this.boss.anims.play('boss_idle', true);
+
+    // Colisões
+    this.physics.add.overlap(this.player, this.fireballs, (p, f) => {
+      f.destroy();
+      this.takeDamage(p, { damage: 15 });
+    });
+
+    this.physics.add.overlap(this.player, this.minions, (p, m) => {
+      m.destroy();
+      this.takeDamage(p, { damage: 10 });
+    });
+  }
+
+  castFireball() {
+    const fb = this.fireballs.create(this.boss.x, this.boss.y, 'fireball');
+    fb.setScale(0.8);
+    fb.body.allowGravity = false;
+
+    const dir = new Phaser.Math.Vector2(this.player.x - this.boss.x, this.player.y - this.boss.y).normalize();
+    fb.setVelocity(dir.x * 200, dir.y * 200);
+
+    setTimeout(() => fb.destroy(), 4000);
+  }
+
+  castLightning() {
+    const spotX = this.player.x + Phaser.Math.Between(-30, 30);
+    const spotY = this.player.y;
+
+    const warn = this.add.rectangle(spotX, spotY, 40, 60, 0xff0000, 0.5).setDepth(1000);
+    this.time.delayedCall(1000, () => {
+      const hit = this.add.rectangle(spotX, spotY, 40, 60, 0xffffff, 0.7).setDepth(1000);
+      this.time.delayedCall(300, () => hit.destroy());
+      this.takeDamage(this.player, { damage: 20 });
+      warn.destroy();
+    });
+  }
+
+  castSummon() {
+    for (let i = 0; i < 2; i++) {
+      const m = this.minions.create(this.boss.x + Phaser.Math.Between(-50, 50), this.boss.y, 'minion');
+      m.setScale(0.6);
+      m.setCollideWorldBounds(true);
+      m.damage = 10;
+      m.speed = 100;
+    }
   }
 
   showUpgradeOptions(choices) {
@@ -428,5 +511,37 @@ class GameScene extends Phaser.Scene {
         e.setTint(0xff0000);
       }
     });
+
+    if (this.boss && !this.physics.world.isPaused) {
+      const now = this.time.now;
+      const dist = Phaser.Math.Distance.Between(this.boss.x, this.boss.y, this.player.x, this.player.y);
+      const dir = new Phaser.Math.Vector2(this.player.x - this.boss.x, this.player.y - this.boss.y).normalize();
+
+      // movimentação simples
+      if (dist > 200) {
+        this.boss.setVelocity(dir.x * 60, dir.y * 60);
+      } else {
+        this.boss.setVelocity(0);
+      }
+
+      // ataque por fases
+      if (now - this.boss.lastAttack > this.boss.attackCooldown) {
+        this.boss.lastAttack = now;
+        this.boss.phase = (this.boss.phase + 1) % 3;
+        this.boss.anims.play('boss_attack', true);
+        switch (this.boss.phase) {
+          case 0: this.castFireball(); break;
+          case 1: this.castLightning(); break;
+          case 2: this.castSummon(); break;
+        }
+        this.boss.anims.play('boss_idle');
+      }
+
+      // minions perseguem o player
+      this.minions.getChildren().forEach(m => {
+        const dir = new Phaser.Math.Vector2(this.player.x - m.x, this.player.y - m.y).normalize();
+        m.setVelocity(dir.x * m.speed, dir.y * m.speed);
+      });
+    }
   }
 }
