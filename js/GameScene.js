@@ -402,7 +402,7 @@ class GameScene extends Phaser.Scene {
     this.checkEnemiesInRange();
     this.updateHPBar();
 
-    if (this.regenHP > 0 && this.playerHealth < this.maxHealth) {
+    if (!this.physics.world.isPaused && this.regenHP > 0 && this.playerHealth < this.maxHealth) {
       this.playerHealth = Math.min(
         this.maxHealth,
         this.playerHealth + (this.regenHP * this.game.loop.delta) / 1000
