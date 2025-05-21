@@ -271,7 +271,7 @@ class GameScene extends Phaser.Scene {
 
     // Geração contínua de inimigos durante a onda
     this.time.addEvent({
-      delay: 1000, // A cada 1 segundo, gera inimigos
+      delay: 2000, // A cada 1 segundo, gera inimigos
       callback: () => {
         if (this.time.now < this.waveEndTime) {
           for (let i = 0; i < 5; i++) {
