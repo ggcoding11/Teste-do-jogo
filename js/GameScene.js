@@ -49,7 +49,6 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
     //Estabelece o controle pelo W,A,S,D
-    this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys("W,A,S,D");
 
     this.enemies = this.physics.add.group();
@@ -388,15 +387,15 @@ class GameScene extends Phaser.Scene {
 
     const speed = 200;
     const dirX =
-      this.cursors.left.isDown || this.keys.A.isDown
+      this.keys.A.isDown
         ? -1
-        : this.cursors.right.isDown || this.keys.D.isDown
+        : this.keys.D.isDown
         ? 1
         : 0;
     const dirY =
-      this.cursors.up.isDown || this.keys.W.isDown
+      this.keys.W.isDown
         ? -1
-        : this.cursors.down.isDown || this.keys.S.isDown
+        : this.keys.S.isDown
         ? 1
         : 0;
 
