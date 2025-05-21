@@ -14,6 +14,21 @@ class GameScene extends Phaser.Scene {
     this.playerXP = 0;
     this.level = 1;
     this.xpToNextLevel = 100; // XP necessário para subir de nível
+
+    this.upgrades = [
+      { name: "Mais Dano", effect: () => (this.damageBonus += 15) },
+      {
+        name: "Velocidade de Ataque",
+        effect: () => (this.attackCooldown *= 0.8),
+      },
+      { name: "Vida Máxima Aumentada", effect: () => (this.maxHealth += 20) },
+      { name: "Regeneração de HP", effect: () => (this.regenHP += 0.5) },
+      { name: "Velocidade Aumentada", effect: () => (this.playerSpeed += 40) },
+    ];
+
+    this.damageBonus = 0; // Bônus de dano inicial
+    this.playerSpeed = 200; // Velocidade padrão do jogador
+    this.regenHP = 0; // Regeneração de HP inicial
   }
 
   preload() {
@@ -172,7 +187,43 @@ class GameScene extends Phaser.Scene {
     this.xpToNextLevel += 50; // Aumenta a dificuldade progressivamente
     console.log(`Você subiu para o nível ${this.level}!`);
 
+    const all = Phaser.Utils.Array.Shuffle(this.upgrades.slice());
+    const upgradeChoices = all.slice(0, 3);
+
+    // Exibir escolhas na tela
+    this.showUpgradeOptions(upgradeChoices);
+
+    console.log(
+      "Upgrades disponíveis:",
+      upgradeChoices.map((u) => u.name)
+    );
+
     this.levelText.setText(`Level: ${this.level}`);
+  }
+
+  showUpgradeOptions(choices) {
+    const menu = this.add.group();
+
+    choices.forEach((upgrade, index) => {
+      const option = this.add
+        .text(this.scale.width / 2, 150 + index * 50, upgrade.name, {
+          fontFamily: '"Press Start 2P"',
+          fontSize: "20px",
+          color: "#ffffff",
+          backgroundColor: "rgba(0,0,0,0.7)",
+          padding: { x: 10, y: 5 },
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0) // <–– trava o texto na tela
+        .setInteractive();
+
+      option.on("pointerdown", () => {
+        upgrade.effect();
+        menu.destroy(true);
+      });
+
+      menu.add(option);
+    });
   }
 
   updateXPBar() {
@@ -330,7 +381,7 @@ class GameScene extends Phaser.Scene {
   }
 
   applyDamage(enemy) {
-    const damage = Phaser.Math.Between(10, 30);
+    const damage = Phaser.Math.Between(10, 30) + this.damageBonus; // Aplica o bônus de dano
     enemy.health -= damage;
     this.showFloatingDamage(enemy.x, enemy.y, damage);
 
@@ -382,22 +433,19 @@ class GameScene extends Phaser.Scene {
   update() {
     this.attackRadius.setPosition(this.player.x, this.player.y);
     this.checkEnemiesInRange();
-
     this.updateHPBar();
 
-    const speed = 200;
-    const dirX =
-      this.keys.A.isDown
-        ? -1
-        : this.keys.D.isDown
-        ? 1
-        : 0;
-    const dirY =
-      this.keys.W.isDown
-        ? -1
-        : this.keys.S.isDown
-        ? 1
-        : 0;
+    // Aplicar regeneração de HP
+    if (this.regenHP > 0 && this.playerHealth < this.maxHealth) {
+      this.playerHealth = Math.min(
+        this.maxHealth,
+        this.playerHealth + (this.regenHP * this.game.loop.delta) / 1000
+      );
+    }
+
+    const speed = this.playerSpeed; // Agora usa playerSpeed atualizado pelos upgrades
+    const dirX = this.keys.A.isDown ? -1 : this.keys.D.isDown ? 1 : 0;
+    const dirY = this.keys.W.isDown ? -1 : this.keys.S.isDown ? 1 : 0;
 
     const vecP = new Phaser.Math.Vector2(dirX, dirY).normalize().scale(speed);
     this.player.setVelocity(vecP.x, vecP.y);
@@ -411,16 +459,14 @@ class GameScene extends Phaser.Scene {
       )
         .normalize()
         .scale(e.speed);
-
       e.setVelocity(vecE.x, vecE.y);
 
-      // Inimigos mais difíceis podem ter comportamento especial
       if (
         e.damage > 20 &&
         Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) <
           100
       ) {
-        e.setTint(0xff0000); // Fica vermelho quando se aproxima, como alerta
+        e.setTint(0xff0000);
       }
     });
   }
