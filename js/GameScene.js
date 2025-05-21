@@ -10,7 +10,6 @@ class GameScene extends Phaser.Scene {
     this.maxHealth = 100; // HP máximo
     this.invulnerabilityCooldown = 200; // Agora o tempo entre danos será 0.2 segundos
     this.lastDamageTime = 0; // Guarda o último tempo em que o jogador foi atingido
-
   }
 
   preload() {
