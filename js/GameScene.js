@@ -399,6 +399,11 @@ class GameScene extends Phaser.Scene {
   }
 
   update() {
+
+    if (this.physics.world.isPaused) {
+      return;
+    }
+    
     this.checkEnemiesInRange();
     this.updateHPBar();
 
