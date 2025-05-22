@@ -424,10 +424,17 @@ class GameScene extends Phaser.Scene {
 
     const dirX = this.keys.A.isDown ? -1 : this.keys.D.isDown ? 1 : 0;
     const dirY = this.keys.W.isDown ? -1 : this.keys.S.isDown ? 1 : 0;
-    const vec = new Phaser.Math.Vector2(dirX, dirY).normalize().scale(this.playerSpeed);
-    this.player.setVelocity(vec.x, vec.y);
-    if (dirX < 0) this.player.setFlipX(true);
-    else if (dirX > 0) this.player.setFlipX(false);
+
+    if (dirX !== 0 || dirY !== 0) {
+      const vec = new Phaser.Math.Vector2(dirX, dirY)
+        .normalize()
+        .scale(this.playerSpeed);
+      this.player.setVelocity(vec.x, vec.y);
+      this.player.setFlipX(vec.x < 0);
+    } else {
+      this.player.setVelocity(0, 0);
+    }
+
 
     this.enemies.getChildren().forEach(e => {
       const chase = new Phaser.Math.Vector2(
