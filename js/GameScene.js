@@ -15,7 +15,7 @@ class GameScene extends Phaser.Scene {
   // chamado sempre que a cena inicia ou reinicia
   init() {
     this.wave = 1;
-    this.maxWaves = 5;
+    this.maxWaves = 10;
     this.waveDuration = 30000;
     this.attackCooldown = 1500;
     this.lastAttackTime = 0;
@@ -293,7 +293,7 @@ class GameScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (this.time.now < this.waveEndTime) {
-          for (let i = 0; i < 5; i++) this.spawnEnemyNearby();
+          for (let i = 0; i < 3; i++) this.spawnEnemyNearby();
         }
       }
     });
