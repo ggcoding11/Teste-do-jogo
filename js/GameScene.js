@@ -31,6 +31,7 @@ class GameScene extends Phaser.Scene {
     this.damageBonus = 0;
     this.playerSpeed = 200;
     this.regenHP = 0;
+    this.isGameOver = false;
   }
 
   preload() {
@@ -163,6 +164,11 @@ class GameScene extends Phaser.Scene {
   }
 
   subirDeNivel() {
+    if (this.isGameOver) {
+      // se já estamos em Game Over, aborta o upgrade
+      return;
+    }
+
     this.level++;
     this.playerXP = 0;
     this.xpToNextLevel += Math.floor(100 * Math.pow(1.2, this.level - 1));
@@ -227,6 +233,8 @@ class GameScene extends Phaser.Scene {
   }
 
   showGameOverScreen() {
+    this.isGameOver = true;
+
     const { width, height } = this.scale;
     // overlay
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
@@ -403,7 +411,7 @@ class GameScene extends Phaser.Scene {
     if (this.physics.world.isPaused) {
       return;
     }
-    
+
     this.checkEnemiesInRange();
     this.updateHPBar();
 
