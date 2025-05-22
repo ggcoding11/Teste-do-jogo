@@ -30,6 +30,8 @@ class LoadingScene extends Phaser.Scene {
         this.load.image('enemy2', 'assets/enemy2.png');
         this.load.image('enemy3', 'assets/enemy3.png');
         this.load.image('rastro', 'assets/rastro.png');
+        this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
+        this.load.audio("musica_enredo", "assets/musica-enredo.mp3");
     }
 
     create() {

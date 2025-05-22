@@ -37,7 +37,7 @@ class TitleScene extends Phaser.Scene {
 
     startButton.on('pointerdown', () => {
       this.menuMusic.stop();
-      this.scene.start('GameScene');
+      this.scene.start('EnredoScene');
     });
   }
 }
