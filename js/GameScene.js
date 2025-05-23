@@ -52,6 +52,8 @@ class GameScene extends Phaser.Scene {
 
   create() {
     // reativa controles e física após reinício
+
+    this.time.paused = false;
     this.input.keyboard.enabled = true;
     this.physics.world.resume();
 
@@ -277,6 +279,8 @@ class GameScene extends Phaser.Scene {
     // para toda a física
     this.physics.world.pause();
     // --> pausa também TODOS os timers, incluindo o de tiroteio
+
+    this.time.paused = true;
     this.input.keyboard.enabled = false;
 
     const { width, height } = this.scale;
