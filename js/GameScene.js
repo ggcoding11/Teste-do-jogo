@@ -16,7 +16,7 @@ class GameScene extends Phaser.Scene {
   init() {
     this.wave = 1;
     this.maxWaves = 10;
-    this.waveDuration = 30000;
+    this.waveDuration = 20000;
     this.attackCooldown = 1500;
     this.lastAttackTime = 0;
     this.playerHealth = 100;
@@ -202,7 +202,7 @@ class GameScene extends Phaser.Scene {
 
     this.level++;
     this.playerXP = 0;
-    this.xpToNextLevel += Math.floor(100 * Math.pow(1.2, this.level - 1));
+    this.xpToNextLevel = 100 * Math.pow(1.15, this.level - 1);
 
     this.physics.world.pause();
     this.time.paused = true;
@@ -335,7 +335,7 @@ class GameScene extends Phaser.Scene {
           }
 
           // 2) na onda 5, também spawnar mini-boss *uma vez*
-          if (this.wave === 6 && !this.miniBossSpawned) {
+          if (this.wave === 8 && !this.miniBossSpawned) {
             this.spawnMiniBoss();
             this.miniBossSpawned = true;
           }
@@ -386,7 +386,7 @@ class GameScene extends Phaser.Scene {
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 
-    this.miniBoss.health = 4000;  // vida aumentada
+    this.miniBoss.health = 8000;  // vida aumentada
     this.miniBoss.speed = 160;   // ligeiramente mais rápido
     this.miniBoss.damage = 30;    // contato, se quiser
 
@@ -453,7 +453,7 @@ class GameScene extends Phaser.Scene {
         this.player.x, this.player.y, tgt.x, tgt.y
       ));
 
-      this.sfxCut.play();
+    this.sfxCut.play();
 
     this.physics.add.overlap(trail, this.enemies, (t, enemy) => {
       this.applyDamage(enemy);
