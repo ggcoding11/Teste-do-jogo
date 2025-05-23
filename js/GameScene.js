@@ -5,7 +5,7 @@ class GameScene extends Phaser.Scene {
     // configurações que não mudam entre reinícios
     this.upgrades = [
       { name: "Mais Dano", effect: () => (this.damageBonus += 15) },
-      { name: "Velocidade de Ataque", effect: () => (this.attackCooldown *= 0.6) },
+      { name: "Velocidade de Ataque", effect: () => (this.attackCooldown *= 0.8) },
       { name: "Vida Máxima Aumentada", effect: () => (this.maxHealth += 20) },
       { name: "Regeneração de HP", effect: () => (this.regenHP += 0.5) },
       { name: "Velocidade Aumentada", effect: () => (this.playerSpeed += 40) },
@@ -202,7 +202,7 @@ class GameScene extends Phaser.Scene {
 
     this.level++;
     this.playerXP = 0;
-    this.xpToNextLevel = 100 * Math.pow(1.15, this.level - 1);
+    this.xpToNextLevel += Math.floor(100 * Math.pow(1.2, this.level - 1));
 
     this.physics.world.pause();
     this.time.paused = true;
@@ -365,14 +365,24 @@ class GameScene extends Phaser.Scene {
       enemy3: { health: 600, speed: 80, damage: 30 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
-    const st = statsMap[key];
+    const base = statsMap[key];
+
+    // fator de escala linear: +10% de força a cada onda
+    const linearScale = 1 + (this.wave - 1) * 0.1;
+
+    // opcional: escala exponencial (+10% por onda de forma acumulativa)
+    // const expoScale  = Math.pow(1.1, this.wave - 1);
+
+    const enemyHealth = Math.floor(base.health * linearScale);
+    const enemyDamage = Math.floor(base.damage * linearScale);
 
     const e = this.enemies.create(x, y, key)
       .setScale(this.player.scaleX)
       .setCollideWorldBounds(true);
-    e.health = st.health;
-    e.speed = st.speed;
-    e.damage = st.damage;
+
+    e.health = enemyHealth;
+    e.speed = base.speed;      // mantém velocidade fixa, ou escale se quiser
+    e.damage = enemyDamage;
   }
 
   spawnMiniBoss() {
