@@ -86,7 +86,7 @@ class GameScene extends Phaser.Scene {
 
     // texto de fase
     const phaseText = this.add
-      .text(width / 2, height - 280, "Fase 1 - ORGULHO", {
+      .text(width / 2, height - 280, "Fase 1 - Luxúria", {
         fontFamily: '"Press Start 2P"',
         fontSize: "20px",
         color: "#ffffff",
