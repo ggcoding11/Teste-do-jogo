@@ -46,6 +46,13 @@ class GameScene extends Phaser.Scene {
     this.load.image("enemy3", "assets/enemy3.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
+    this.load.audio("morte1", "assets/morte1.mp3");
+    this.load.audio("morte2", "assets/morte2.mp3");
+    this.load.audio("morte3", "assets/morte3.mp3");
+    this.load.audio("morte4", "assets/morte4.mp3");
+    this.load.audio("morte5", "assets/morte5.mp3");
+    this.load.audio("morte6", "assets/morte6.mp3");
+    this.load.audio("morte7", "assets/morte7.mp3");
     this.load.image("projetil", "assets/projetil.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
   }
@@ -57,7 +64,17 @@ class GameScene extends Phaser.Scene {
     this.input.keyboard.enabled = true;
     this.physics.world.resume();
 
-    this.sfxCut = this.sound.add("sfxCut", { volume: 0.2 });
+    this.sfxCut = this.sound.add("sfxCut", { volume: 0.5 });
+
+    this.morteSounds = [
+      this.sound.add("morte1", { volume: 0.2 }),
+      this.sound.add("morte2", { volume: 0.2 }),
+      this.sound.add("morte3", { volume: 0.2 }),
+      this.sound.add("morte4", { volume: 0.2 }),
+      this.sound.add("morte5", { volume: 0.2 }),
+      this.sound.add("morte6", { volume: 0.2 }),
+      this.sound.add("morte7", { volume: 0.2 })
+    ];
 
     const { width, height } = this.sys.game.config;
     const mapSize = 3000;
@@ -498,6 +515,8 @@ class GameScene extends Phaser.Scene {
     enemy.health -= dmg;
     this.showFloatingDamage(enemy.x, enemy.y, dmg);
     if (enemy.health <= 0) {
+      const sfx = Phaser.Math.RND.pick(this.morteSounds);
+      sfx.play();
       enemy.destroy();
       this.ganharXP(10 + this.wave * 2);
     }
