@@ -32,6 +32,10 @@ class GameScene extends Phaser.Scene {
     this.playerSpeed = 200;
     this.regenHP = 0;
     this.isGameOver = false;
+
+    // === MINI-BOSS FLAGS ===
+    this.miniBossSpawned = false;     // só uma vez na onda 5
+    this.miniBossProjectiles = null;  // criado em create()
   }
 
   preload() {
@@ -41,6 +45,7 @@ class GameScene extends Phaser.Scene {
     this.load.image("enemy2", "assets/enemy2.png");
     this.load.image("enemy3", "assets/enemy3.png");
     this.load.image("rastro", "assets/rastro.png");
+    this.load.image("projetil", "assets/projetil.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
   }
 
@@ -73,6 +78,8 @@ class GameScene extends Phaser.Scene {
 
     // grupo de inimigos
     this.enemies = this.physics.add.group();
+
+    this.miniBossProjectiles = this.physics.add.group();
 
     // texto de fase
     const phaseText = this.add
@@ -138,6 +145,27 @@ class GameScene extends Phaser.Scene {
 
     // overlap jogador ↔ inimigos
     this.physics.add.overlap(this.player, this.enemies, this.takeDamage, null, this);
+
+    this.physics.add.overlap(
+      this.player,
+      this.miniBossProjectiles,
+      (player, proj) => {
+        // dano de projétil
+        const now = this.time.now;
+        if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
+        this.lastDamageTime = now;
+
+        this.playerHealth = Math.max(0, this.playerHealth - proj.damage);
+        this.updateHPBar();
+        proj.destroy();
+
+        if (this.playerHealth <= 0) {
+          this.showGameOverScreen();
+        }
+      },
+      null,
+      this
+    );
 
     // começa as ondas de inimigos
     this.startWave();
@@ -235,6 +263,11 @@ class GameScene extends Phaser.Scene {
   showGameOverScreen() {
     this.isGameOver = true;
 
+    // para toda a física
+    this.physics.world.pause();
+    // --> pausa também TODOS os timers, incluindo o de tiroteio
+    this.input.keyboard.enabled = false;
+
     const { width, height } = this.scale;
     // overlay
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
@@ -293,7 +326,16 @@ class GameScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (this.time.now < this.waveEndTime) {
-          for (let i = 0; i < 3; i++) this.spawnEnemyNearby();
+          // 1) sempre 3 inimigos normais
+          for (let i = 0; i < 3; i++) {
+            this.spawnEnemyNearby();
+          }
+
+          // 2) na onda 5, também spawnar mini-boss *uma vez*
+          if (this.wave === 6 && !this.miniBossSpawned) {
+            this.spawnMiniBoss();
+            this.miniBossSpawned = true;
+          }
         }
       }
     });
@@ -328,6 +370,64 @@ class GameScene extends Phaser.Scene {
     e.health = st.health;
     e.speed = st.speed;
     e.damage = st.damage;
+  }
+
+  spawnMiniBoss() {
+    const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    const dist = Phaser.Math.Between(800, 1200);
+    const x = this.player.x + Math.cos(ang) * dist;
+    const y = this.player.y + Math.sin(ang) * dist;
+
+    // basear em enemy1, só maior e mais forte
+    this.miniBoss = this.enemies.create(x, y, "enemy1")
+      .setScale(this.player.scaleX * 2)
+      .setCollideWorldBounds(true);
+
+    this.miniBoss.health = 2500;  // vida aumentada
+    this.miniBoss.speed = 160;   // ligeiramente mais rápido
+    this.miniBoss.damage = 30;    // contato, se quiser
+
+    this.miniBoss.setTint(0xffaa00);
+
+    // timer para atirar a cada 1.5s
+    this.time.addEvent({
+      delay: 1500,
+      loop: true,
+      callback: () => this.bossShoot(this.miniBoss)
+    });
+  }
+
+  // === novo método ===
+  bossShoot(boss) {
+
+    if (!boss.active || this.isGameOver) return;
+
+    // 1) Cria o projétil sem escala ainda
+    const proj = this.miniBossProjectiles.create(boss.x, boss.y, "projetil");
+
+    // 2) Define um tamanho bem menor (ex: 20% do original)
+    proj.setScale(0.1);
+
+    // e reajusta a hitbox
+    proj.body.setSize(proj.displayWidth, proj.displayHeight);
+    proj.body.setOffset(
+      (proj.width - proj.displayWidth) / 2,
+      (proj.height - proj.displayHeight) / 2
+    );
+
+    // 4) Dá dano menor, se quiser
+    proj.damage = 20;
+
+    // 5) Velocidade em direção ao jogador
+    const angle = Phaser.Math.Angle.Between(boss.x, boss.y, this.player.x, this.player.y);
+    this.physics.velocityFromRotation(angle, 300, proj.body.velocity);
+
+    // 6) Faz o projétil “morrer” ao sair do mundo
+    proj.setCollideWorldBounds(true);
+    proj.body.onWorldBounds = true;
+    proj.body.world.on("worldbounds", body => {
+      if (body.gameObject === proj) proj.destroy();
+    });
   }
 
   checkEnemiesInRange() {
