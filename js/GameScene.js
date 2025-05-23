@@ -383,7 +383,7 @@ class GameScene extends Phaser.Scene {
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 
-    this.miniBoss.health = 2500;  // vida aumentada
+    this.miniBoss.health = 4000;  // vida aumentada
     this.miniBoss.speed = 160;   // ligeiramente mais rápido
     this.miniBoss.damage = 30;    // contato, se quiser
 
