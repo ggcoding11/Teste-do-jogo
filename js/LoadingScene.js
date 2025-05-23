@@ -22,16 +22,23 @@ class LoadingScene extends Phaser.Scene {
         });
 
         // Carregar todos os assets necessários
-        this.load.image('title_bg', 'assets/bg.png');
-        this.load.audio('menu_music', 'assets/musica-menu-titulo.mp3');
-        this.load.image('fase1_bg', 'assets/fase1.png');
-        this.load.image('player', 'assets/player.png');
-        this.load.image('enemy1', 'assets/enemy1.png');
-        this.load.image('enemy2', 'assets/enemy2.png');
-        this.load.image('enemy3', 'assets/enemy3.png');
-        this.load.image('rastro', 'assets/rastro.png');
+        this.load.image("fase1_bg", "assets/fase1.png");
+        this.load.image("player", "assets/player.png");
+        this.load.image("enemy1", "assets/enemy1.png");
+        this.load.image("enemy2", "assets/enemy2.png");
+        this.load.image("enemy3", "assets/enemy3.png");
+        this.load.image("rastro", "assets/rastro.png");
+        this.load.audio("sfxCut", "assets/sfx-corte.mp3");
+        this.load.audio("morte1", "assets/morte1.mp3");
+        this.load.audio("morte2", "assets/morte2.mp3");
+        this.load.audio("morte3", "assets/morte3.mp3");
+        this.load.audio("morte4", "assets/morte4.mp3");
+        this.load.audio("morte5", "assets/morte5.mp3");
+        this.load.audio("morte6", "assets/morte6.mp3");
+        this.load.audio("morte7", "assets/morte7.mp3");
+        this.load.audio("levelUp", "assets/level-up.mp3");
+        this.load.image("projetil", "assets/projetil.png");
         this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
-        this.load.audio("musica_enredo", "assets/musica-enredo.mp3");
     }
 
     create() {

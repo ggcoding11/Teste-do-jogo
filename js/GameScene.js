@@ -53,6 +53,7 @@ class GameScene extends Phaser.Scene {
     this.load.audio("morte5", "assets/morte5.mp3");
     this.load.audio("morte6", "assets/morte6.mp3");
     this.load.audio("morte7", "assets/morte7.mp3");
+    this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.image("projetil", "assets/projetil.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
   }
@@ -65,6 +66,7 @@ class GameScene extends Phaser.Scene {
     this.physics.world.resume();
 
     this.sfxCut = this.sound.add("sfxCut", { volume: 0.5 });
+    this.sfxLevelUp = this.sound.add("levelUp", { volume: 0.5 });
 
     this.morteSounds = [
       this.sound.add("morte1", { volume: 0.2 }),
@@ -222,6 +224,8 @@ class GameScene extends Phaser.Scene {
     this.level++;
     this.playerXP = 0;
     this.xpToNextLevel += Math.floor(100 * Math.pow(1.2, this.level - 1));
+
+    this.sfxLevelUp.play();
 
     this.physics.world.pause();
     this.time.paused = true;
