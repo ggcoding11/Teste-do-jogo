@@ -234,6 +234,14 @@ class GameScene extends Phaser.Scene {
         this.physics.world.resume();
         this.time.paused = false;
         this.input.keyboard.enabled = true;
+
+        this.keys.W.reset();
+        this.keys.A.reset();
+        this.keys.S.reset();
+        this.keys.D.reset();
+
+        // opcionalmente zera a velocidade imediata do player
+        this.player.setVelocity(0, 0);
       });
 
       menu.add(opt);
