@@ -45,6 +45,7 @@ class GameScene extends Phaser.Scene {
     this.load.image("enemy2", "assets/enemy2.png");
     this.load.image("enemy3", "assets/enemy3.png");
     this.load.image("rastro", "assets/rastro.png");
+    this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.image("projetil", "assets/projetil.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
   }
@@ -53,6 +54,8 @@ class GameScene extends Phaser.Scene {
     // reativa controles e física após reinício
     this.input.keyboard.enabled = true;
     this.physics.world.resume();
+
+    this.sfxCut = this.sound.add("sfxCut", { volume: 0.2 });
 
     const { width, height } = this.sys.game.config;
     const mapSize = 3000;
@@ -449,6 +452,8 @@ class GameScene extends Phaser.Scene {
       .setRotation(Phaser.Math.Angle.Between(
         this.player.x, this.player.y, tgt.x, tgt.y
       ));
+
+      this.sfxCut.play();
 
     this.physics.add.overlap(trail, this.enemies, (t, enemy) => {
       this.applyDamage(enemy);
