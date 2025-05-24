@@ -33,6 +33,8 @@ class GameScene extends Phaser.Scene {
     this.regenHP = 0;
     this.isGameOver = false;
 
+    this.isPaused = false;
+
     // === MINI-BOSS FLAGS ===
     this.miniBossSpawned = false;     // só uma vez na onda 5
     this.miniBossProjectiles = null;  // criado em create()
@@ -190,6 +192,22 @@ class GameScene extends Phaser.Scene {
       null,
       this
     );
+
+    this.pauseText = this.add
+      .text(width / 2, height / 2, 'PAUSADO', {
+        fontFamily: '"Press Start 2P"',
+        fontSize: '32px',
+        color: '#ffffff',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: { x: 20, y: 10 }
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(1000)
+      .setVisible(false);
+
+    // b) capture the Esc key
+    this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
     // começa as ondas de inimigos
     this.startWave();
@@ -556,9 +574,30 @@ class GameScene extends Phaser.Scene {
     return closest;
   }
 
-  update() {
+  update(time, delta) {
+    if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+      if (!this.isPaused) {
+        // pause everything but keep Esc listener alive
+        this.physics.world.pause();
+        this.time.paused = true;
+        this.pauseText.setVisible(true);
+        this.isPaused = true;
+      } else {
+        // resume
+        this.physics.world.resume();
+        this.time.paused = false;
+        this.pauseText.setVisible(false);
+        this.isPaused = false;
+      }
+      return; // skip the rest of update() in this frame
+    }
 
     if (this.physics.world.isPaused) {
+      return;
+    }
+
+    // if paused, bail out early
+    if (this.isPaused) {
       return;
     }
 
