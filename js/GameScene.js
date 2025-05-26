@@ -480,17 +480,21 @@ class GameScene extends Phaser.Scene {
     this.waveText.setText(`Onda: ${this.wave}`);
     this.waveEndTime = this.time.now + this.waveDuration;
 
+    // >>> Força o spawn inicial IMEDIATO
+    for (let i = 0; i < 2; i++) {
+      this.spawnEnemyNearby();
+    }
+
+    // evento que spawna inimigos a cada 2s
     this.time.addEvent({
       delay: 2000,
       loop: true,
       callback: () => {
         if (this.time.now < this.waveEndTime) {
-          // 1) sempre 3 inimigos normais
           for (let i = 0; i < 2; i++) {
             this.spawnEnemyNearby();
           }
 
-          // 2) na onda 5, também spawnar mini-boss *uma vez*
           if (this.wave === 5 && !this.miniBossSpawned) {
             this.spawnMiniBoss();
             this.miniBossSpawned = true;
