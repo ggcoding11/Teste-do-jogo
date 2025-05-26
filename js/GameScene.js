@@ -5,18 +5,20 @@ class GameScene extends Phaser.Scene {
     // configurações que não mudam entre reinícios
     this.upgrades = [
       {
-        name: "Mais Dano", effect: () => {
+        name: "Mais Dano",
+        effect: () => {
           this.damageBonus += 15;
           this.bowDamage += 15;
           this.staffDamage += 15;
-        }
+        },
       },
       {
-        name: "Velocidade de Ataque", effect: () => {
+        name: "Velocidade de Ataque",
+        effect: () => {
           this.attackCooldown *= 0.8;
           this.bowCooldown *= 0.8;
           this.staffCooldown *= 0.8;
-        }
+        },
       },
       { name: "Vida Máxima Aumentada", effect: () => (this.maxHealth += 20) },
       { name: "Regeneração de HP", effect: () => (this.regenHP += 0.5) },
@@ -26,7 +28,7 @@ class GameScene extends Phaser.Scene {
 
   // chamado sempre que a cena inicia ou reinicia
   init() {
-    this.secondaryWeapon = null;   // 'bow' | 'staff' | 'shield'
+    this.secondaryWeapon = null; // 'bow' | 'staff' | 'shield'
     this.passiveFireTimer = null;
     this.isInvulnerable = false;
     this.wave = 1;
@@ -39,13 +41,13 @@ class GameScene extends Phaser.Scene {
     this.invulnerabilityCooldown = 200;
     this.lastDamageTime = 0;
 
-    this.shieldCooldown = 5000;      // tempo de reuso em ms
+    this.shieldCooldown = 6000; // tempo de reuso em ms
     this.lastShieldTime = -Infinity; // marca a última vez que usou
 
-    this.bowDamage = 200;
-    this.staffDamage = 5;
-    this.bowCooldown = 1000; // ms
-    this.staffCooldown = 1500; // ms
+    this.staffDamage = 25; // por projétil
+    this.staffCooldown = 1700;
+    this.bowDamage = 150;
+    this.bowCooldown = 1200; // mais lento
 
     this.playerXP = 0;
     this.level = 1;
@@ -59,8 +61,8 @@ class GameScene extends Phaser.Scene {
     this.isPaused = false;
 
     // === MINI-BOSS FLAGS ===
-    this.miniBossSpawned = false;     // só uma vez na onda 5
-    this.miniBossProjectiles = null;  // criado em create()
+    this.miniBossSpawned = false; // só uma vez na onda 5
+    this.miniBossProjectiles = null; // criado em create()
   }
 
   preload() {
@@ -82,13 +84,13 @@ class GameScene extends Phaser.Scene {
     this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.image("projetil", "assets/projetil.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
-    this.load.image('arrow', 'assets/arrow.png');       // flecha do arco
-    this.load.image('staffProj', 'assets/staff_proj.png'); // projétil do cajado
+    this.load.image("arrow", "assets/arrow.png"); // flecha do arco
+    this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
 
     // ícones de power‐up
-    this.load.image('icon_bow', 'assets/icon_bow.png');
-    this.load.image('icon_staff', 'assets/icon_staff.png');
-    this.load.image('icon_shield', 'assets/icon_shield.png');
+    this.load.image("icon_bow", "assets/icon_bow.png");
+    this.load.image("icon_staff", "assets/icon_staff.png");
+    this.load.image("icon_shield", "assets/icon_shield.png");
   }
 
   create() {
@@ -108,14 +110,17 @@ class GameScene extends Phaser.Scene {
       this.sound.add("morte4", { volume: 0.2 }),
       this.sound.add("morte5", { volume: 0.2 }),
       this.sound.add("morte6", { volume: 0.2 }),
-      this.sound.add("morte7", { volume: 0.2 })
+      this.sound.add("morte7", { volume: 0.2 }),
     ];
 
     const { width, height } = this.sys.game.config;
     const mapSize = 3000;
 
     // música de fundo
-    this.fase1Music = this.sound.add("musica_fase1", { loop: true, volume: 0.5 });
+    this.fase1Music = this.sound.add("musica_fase1", {
+      loop: true,
+      volume: 0.5,
+    });
     this.fase1Music.play();
 
     // cenário e limites
@@ -136,13 +141,14 @@ class GameScene extends Phaser.Scene {
     // grupo de inimigos
     this.enemies = this.physics.add.group();
 
-    this.powerUps = this.physics.add.group();           // itens no chão
-    this.shieldKey = this.input.keyboard.addKey('E');    // ativa escudo
+    this.powerUps = this.physics.add.group(); // itens no chão
+    this.shieldKey = this.input.keyboard.addKey("E"); // ativa escudo
     // HUD: espaço para ícone (fixo no canto)
-    this.iconHUD = this.add.image(width - 20, 20, null)
+    this.iconHUD = this.add
+      .image(width - 20, 20, null)
       .setOrigin(1, 0)
       .setScrollFactor(0)
-      .setScale(0.1)   // antes era 2, agora 1 (metade do tamanho)
+      .setScale(0.1) // antes era 2, agora 1 (metade do tamanho)
       .setDepth(1000);
 
     this.miniBossProjectiles = this.physics.add.group();
@@ -154,7 +160,7 @@ class GameScene extends Phaser.Scene {
         fontSize: "20px",
         color: "#ffffff",
         backgroundColor: "rgba(0,0,0,0.7)",
-        padding: { x: 20, y: 10 }
+        padding: { x: 20, y: 10 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0);
@@ -164,7 +170,7 @@ class GameScene extends Phaser.Scene {
         targets: phaseText,
         alpha: 0,
         duration: 1000,
-        onComplete: () => phaseText.destroy()
+        onComplete: () => phaseText.destroy(),
       });
     });
 
@@ -175,42 +181,75 @@ class GameScene extends Phaser.Scene {
         fontSize: "24px",
         color: "#ffffff",
         backgroundColor: "rgba(0,0,0,0.5)",
-        padding: { x: 10, y: 5 }
+        padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5, 0)
       .setScrollFactor(0)
       .setDepth(1000);
 
     // HUD: HP
-    this.hpBarBackground = this.add.rectangle(20, 20, 200, 20, 0x444444).setOrigin(0).setScrollFactor(0).setDepth(1000);
-    this.hpBar = this.add.rectangle(20, 20, 200, 20, 0xff0000).setOrigin(0).setScrollFactor(0).setDepth(1000);
-    this.hpText = this.add.text(20, 5, `HP: 100%`, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: "16px",
-      color: "#ffffff"
-    }).setOrigin(0).setScrollFactor(0).setDepth(1000);
+    this.hpBarBackground = this.add
+      .rectangle(20, 20, 200, 20, 0x444444)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+    this.hpBar = this.add
+      .rectangle(20, 20, 200, 20, 0xff0000)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+    this.hpText = this.add
+      .text(20, 5, `HP: 100%`, {
+        fontFamily: '"Press Start 2P"',
+        fontSize: "16px",
+        color: "#ffffff",
+      })
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(1000);
 
     // HUD: XP
-    this.xpBarBackground = this.add.rectangle(20, 60, 200, 10, 0x444444).setOrigin(0).setScrollFactor(0).setDepth(1000);
-    this.xpBar = this.add.rectangle(20, 60, 200, 10, 0x00ff00).setOrigin(0).setScrollFactor(0).setDepth(1000);
-    this.xpText = this.add.text(20, 45, `XP: 0/${this.xpToNextLevel}`, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: "16px",
-      color: "#ffffff"
-    }).setOrigin(0).setScrollFactor(0).setDepth(1000);
+    this.xpBarBackground = this.add
+      .rectangle(20, 60, 200, 10, 0x444444)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+    this.xpBar = this.add
+      .rectangle(20, 60, 200, 10, 0x00ff00)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+    this.xpText = this.add
+      .text(20, 45, `XP: 0/${this.xpToNextLevel}`, {
+        fontFamily: '"Press Start 2P"',
+        fontSize: "16px",
+        color: "#ffffff",
+      })
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(1000);
 
     // HUD: Level
-    this.levelText = this.add.text(20, 75, `Level: ${this.level}`, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: "16px",
-      color: "#ffffff"
-    }).setScrollFactor(0).setDepth(1000);
+    this.levelText = this.add
+      .text(20, 75, `Level: ${this.level}`, {
+        fontFamily: '"Press Start 2P"',
+        fontSize: "16px",
+        color: "#ffffff",
+      })
+      .setScrollFactor(0)
+      .setDepth(1000);
 
     this.updateHPBar();
     this.updateXPBar();
 
     // overlap jogador ↔ inimigos
-    this.physics.add.overlap(this.player, this.enemies, this.takeDamage, null, this);
+    this.physics.add.overlap(
+      this.player,
+      this.enemies,
+      this.takeDamage,
+      null,
+      this
+    );
 
     this.physics.add.overlap(
       this.player,
@@ -242,12 +281,12 @@ class GameScene extends Phaser.Scene {
     );
 
     this.pauseText = this.add
-      .text(width / 2, height / 2, 'PAUSADO', {
+      .text(width / 2, height / 2, "PAUSADO", {
         fontFamily: '"Press Start 2P"',
-        fontSize: '32px',
-        color: '#ffffff',
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        padding: { x: 20, y: 10 }
+        fontSize: "32px",
+        color: "#ffffff",
+        backgroundColor: "rgba(0,0,0,0.7)",
+        padding: { x: 20, y: 10 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -255,7 +294,9 @@ class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     // b) capture the Esc key
-    this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.pauseKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.ESC
+    );
 
     // começa as ondas de inimigos
     this.startWave();
@@ -297,7 +338,10 @@ class GameScene extends Phaser.Scene {
     this.time.paused = true;
     this.input.keyboard.enabled = false;
 
-    const choices = Phaser.Utils.Array.Shuffle(this.upgrades.slice()).slice(0, 3);
+    const choices = Phaser.Utils.Array.Shuffle(this.upgrades.slice()).slice(
+      0,
+      3
+    );
     this.showUpgradeOptions(choices);
     this.levelText.setText(`Level: ${this.level}`);
   }
@@ -311,7 +355,7 @@ class GameScene extends Phaser.Scene {
           fontSize: "20px",
           color: "#ffffff",
           backgroundColor: "rgba(0,0,0,0.7)",
-          padding: { x: 10, y: 5 }
+          padding: { x: 10, y: 5 },
         })
         .setOrigin(0.5)
         .setScrollFactor(0)
@@ -338,12 +382,16 @@ class GameScene extends Phaser.Scene {
   }
 
   takeDamage(player, enemy) {
-
     if (this.isInvulnerable) return;
 
     const now = this.time.now;
     if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
-    const d = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
+    const d = Phaser.Math.Distance.Between(
+      player.x,
+      player.y,
+      enemy.x,
+      enemy.y
+    );
     if (d > 20) return;
 
     this.lastDamageTime = now;
@@ -359,7 +407,7 @@ class GameScene extends Phaser.Scene {
       tint: 0xff0000,
       duration: 100,
       yoyo: true,
-      onComplete: () => this.player.clearTint()
+      onComplete: () => this.player.clearTint(),
     });
   }
 
@@ -375,22 +423,28 @@ class GameScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     // overlay
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
-      .setOrigin(0.5).setScrollFactor(0);
+    this.add
+      .rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
+      .setOrigin(0.5)
+      .setScrollFactor(0);
     // texto
-    this.add.text(width / 2, height / 2 - 50, "GAME OVER", {
-      fontFamily: '"Press Start 2P"',
-      fontSize: "40px",
-      color: "#ffffff"
-    }).setOrigin(0.5).setScrollFactor(0);
+    this.add
+      .text(width / 2, height / 2 - 50, "GAME OVER", {
+        fontFamily: '"Press Start 2P"',
+        fontSize: "40px",
+        color: "#ffffff",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
     // botão Reiniciar
-    const btn = this.add.text(width / 2, height / 2 + 50, "Reiniciar", {
-      fontFamily: '"Press Start 2P"',
-      fontSize: "24px",
-      color: "#ffffff",
-      backgroundColor: "rgba(0,0,0,0.7)",
-      padding: { x: 20, y: 10 }
-    })
+    const btn = this.add
+      .text(width / 2, height / 2 + 50, "Reiniciar", {
+        fontFamily: '"Press Start 2P"',
+        fontSize: "24px",
+        color: "#ffffff",
+        backgroundColor: "rgba(0,0,0,0.7)",
+        padding: { x: 20, y: 10 },
+      })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setInteractive();
@@ -406,7 +460,7 @@ class GameScene extends Phaser.Scene {
         fontSize: "24px",
         color: "#ffffff",
         backgroundColor: "rgba(0,0,0,0.7)",
-        padding: { x: 20, y: 10 }
+        padding: { x: 20, y: 10 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -415,7 +469,7 @@ class GameScene extends Phaser.Scene {
 
     menuBtn.on("pointerdown", () => {
       if (this.fase1Music) this.fase1Music.stop();
-      this.scene.start("TitleScene");  // vai para a cena de título
+      this.scene.start("TitleScene"); // vai para a cena de título
     });
 
     this.physics.world.pause();
@@ -437,12 +491,12 @@ class GameScene extends Phaser.Scene {
           }
 
           // 2) na onda 5, também spawnar mini-boss *uma vez*
-          if (this.wave === 1 && !this.miniBossSpawned) {
+          if (this.wave === 5 && !this.miniBossSpawned) {
             this.spawnMiniBoss();
             this.miniBossSpawned = true;
           }
         }
-      }
+      },
     });
 
     this.time.delayedCall(this.waveDuration, () => {
@@ -456,7 +510,8 @@ class GameScene extends Phaser.Scene {
   }
 
   spawnEnemyNearby() {
-    const minD = 600, maxD = 1200;
+    const minD = 600,
+      maxD = 1200;
     const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const x = this.player.x + Math.cos(ang) * Phaser.Math.Between(minD, maxD);
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
@@ -478,12 +533,13 @@ class GameScene extends Phaser.Scene {
     const enemyHealth = Math.floor(base.health * linearScale);
     const enemyDamage = Math.floor(base.damage * linearScale);
 
-    const e = this.enemies.create(x, y, key)
+    const e = this.enemies
+      .create(x, y, key)
       .setScale(this.player.scaleX)
       .setCollideWorldBounds(true);
 
     e.health = enemyHealth;
-    e.speed = base.speed;      // mantém velocidade fixa, ou escale se quiser
+    e.speed = base.speed; // mantém velocidade fixa, ou escale se quiser
     e.damage = enemyDamage;
   }
 
@@ -493,24 +549,29 @@ class GameScene extends Phaser.Scene {
     const x = this.player.x + Math.cos(ang) * dist;
     const y = this.player.y + Math.sin(ang) * dist;
 
-    this.miniBoss = this.enemies.create(x, y, "miniboss1")
+    this.miniBoss = this.enemies
+      .create(x, y, "miniboss1")
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 
-    this.miniBoss.health = 100;  // vida aumentada
-    this.miniBoss.speed = 100;   // ligeiramente mais rápido
-    this.miniBoss.damage = 30;    // contato, se quiser
+    this.miniBoss.health = 1500; // vida aumentada
+    this.miniBoss.speed = 80; // ligeiramente mais rápido
+    this.miniBoss.damage = 35; // contato, se quiser
 
-    this.miniBoss.once('destroy', () => {
-      const types = ['bow', 'staff', 'shield'];
+    this.miniBoss.once("destroy", () => {
+      const types = ["bow", "staff", "shield"];
       const choice = Phaser.Math.RND.pick(types);
       const spriteKey = {
-        bow: 'icon_bow',
-        staff: 'icon_staff',
-        shield: 'icon_shield'
+        bow: "icon_bow",
+        staff: "icon_staff",
+        shield: "icon_shield",
       }[choice];
 
-      const drop = this.powerUps.create(this.miniBoss.x, this.miniBoss.y, spriteKey);
+      const drop = this.powerUps.create(
+        this.miniBoss.x,
+        this.miniBoss.y,
+        spriteKey
+      );
       drop.type = choice;
       drop.setScale(0.1);
       drop.setInteractive();
@@ -520,13 +581,12 @@ class GameScene extends Phaser.Scene {
     this.time.addEvent({
       delay: 1500,
       loop: true,
-      callback: () => this.bossShoot(this.miniBoss)
+      callback: () => this.bossShoot(this.miniBoss),
     });
   }
 
   // === novo método ===
   bossShoot(boss) {
-
     if (!boss.active || this.isGameOver) return;
 
     // 1) Cria o projétil sem escala ainda
@@ -546,21 +606,37 @@ class GameScene extends Phaser.Scene {
     proj.damage = 20;
 
     // 5) Velocidade em direção ao jogador
-    const angle = Phaser.Math.Angle.Between(boss.x, boss.y, this.player.x, this.player.y);
+    const angle = Phaser.Math.Angle.Between(
+      boss.x,
+      boss.y,
+      this.player.x,
+      this.player.y
+    );
     this.physics.velocityFromRotation(angle, 300, proj.body.velocity);
 
     // 6) Faz o projétil “morrer” ao sair do mundo
     proj.setCollideWorldBounds(true);
     proj.body.onWorldBounds = true;
-    proj.body.world.on("worldbounds", body => {
+    proj.body.world.on("worldbounds", (body) => {
       if (body.gameObject === proj) proj.destroy();
     });
   }
 
   checkEnemiesInRange() {
-    if (this.enemies.getChildren().some(e =>
-      Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 150
-    )) this.attack();
+    if (
+      this.enemies
+        .getChildren()
+        .some(
+          (e) =>
+            Phaser.Math.Distance.Between(
+              this.player.x,
+              this.player.y,
+              e.x,
+              e.y
+            ) < 150
+        )
+    )
+      this.attack();
   }
 
   attack() {
@@ -571,11 +647,13 @@ class GameScene extends Phaser.Scene {
     const tgt = this.getClosestEnemy();
     if (!tgt) return;
 
-    const trail = this.physics.add.image(this.player.x, this.player.y, "rastro")
-      .setAlpha(0.8).setScale(0.1)
-      .setRotation(Phaser.Math.Angle.Between(
-        this.player.x, this.player.y, tgt.x, tgt.y
-      ));
+    const trail = this.physics.add
+      .image(this.player.x, this.player.y, "rastro")
+      .setAlpha(0.8)
+      .setScale(0.1)
+      .setRotation(
+        Phaser.Math.Angle.Between(this.player.x, this.player.y, tgt.x, tgt.y)
+      );
 
     this.sfxCut.play();
 
@@ -591,7 +669,7 @@ class GameScene extends Phaser.Scene {
       alpha: 0,
       duration: 250,
       ease: "Linear",
-      onComplete: () => trail.destroy()
+      onComplete: () => trail.destroy(),
     });
   }
 
@@ -621,14 +699,20 @@ class GameScene extends Phaser.Scene {
       alpha: 0,
       duration: 800,
       ease: "Linear",
-      onComplete: () => txt.destroy()
+      onComplete: () => txt.destroy(),
     });
   }
 
   getClosestEnemy() {
-    let closest = null, minD = Infinity;
-    this.enemies.getChildren().forEach(e => {
-      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
+    let closest = null,
+      minD = Infinity;
+    this.enemies.getChildren().forEach((e) => {
+      const d = Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        e.x,
+        e.y
+      );
       if (d < 180 && d < minD) {
         closest = e;
         minD = d;
@@ -648,67 +732,87 @@ class GameScene extends Phaser.Scene {
     drop.destroy();
     this.setupSecondaryWeapon();
     // atualiza ícone no HUD
-    this.iconHUD.setTexture({
-      bow: 'icon_bow',
-      staff: 'icon_staff',
-      shield: 'icon_shield'
-    }[this.secondaryWeapon]);
+    this.iconHUD.setTexture(
+      {
+        bow: "icon_bow",
+        staff: "icon_staff",
+        shield: "icon_shield",
+      }[this.secondaryWeapon]
+    );
   }
 
   setupSecondaryWeapon() {
-    if (this.secondaryWeapon === 'bow') {
+    if (this.secondaryWeapon === "bow") {
       this.passiveFireTimer = this.time.addEvent({
         delay: this.bowCooldown,
         loop: true,
-        callback: () => this.autoFireBow()
+        callback: () => this.autoFireBow(),
       });
-    }
-    else if (this.secondaryWeapon === 'staff') {
+    } else if (this.secondaryWeapon === "staff") {
       this.passiveFireTimer = this.time.addEvent({
         delay: this.staffCooldown,
         loop: true,
-        callback: () => this.autoFireStaff()
+        callback: () => this.autoFireStaff(),
       });
     }
   }
-
 
   autoFireBow() {
     if (this.isGameOver) return;
     const tgt = this.getClosestEnemy();
     if (!tgt) return;
 
-    // alcance (você já aumentou para 1900, por exemplo)
-    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, tgt.x, tgt.y);
-
-    const ang = Phaser.Math.Angle.Between(this.player.x, this.player.y, tgt.x, tgt.y);
-    const a = this.physics.add.sprite(this.player.x, this.player.y, 'arrow')
-      .setScale(0.15)
+    const ang = Phaser.Math.Angle.Between(
+      this.player.x,
+      this.player.y,
+      tgt.x,
+      tgt.y
+    );
+    const a = this.physics.add
+      .sprite(this.player.x, this.player.y, "arrow")
+      .setScale(0.05)
       .setOrigin(0.5)
       .setRotation(ang);
 
     a.damage = this.bowDamage;
+
+    // define a velocidade da flecha
     this.physics.velocityFromRotation(ang, 300, a.body.velocity);
 
+    // colisão com inimigos sem destruir a flecha
     this.physics.add.overlap(a, this.enemies, (proj, enemy) => {
       this.applyDamage(enemy);
-      proj.destroy();
     });
-    a.setCollideWorldBounds(true).body.onWorldBounds = true;
-    a.body.world.on('worldbounds', b => b.gameObject.destroy());
-  }
 
+    // destrói ao sair do mundo
+    a.setCollideWorldBounds(true);
+    a.body.onWorldBounds = true;
+    a.body.world.on("worldbounds", (body) => {
+      if (body.gameObject === a) a.destroy();
+    });
+
+    // destrói depois de 2 segundos
+    this.time.delayedCall(2000, () => {
+      if (a.active) a.destroy();
+    });
+  }
 
   autoFireStaff() {
     if (this.isGameOver) return;
     const tgt = this.getClosestEnemy();
     if (!tgt) return;
-    const baseAng = Phaser.Math.Angle.Between(this.player.x, this.player.y, tgt.x, tgt.y);
+    const baseAng = Phaser.Math.Angle.Between(
+      this.player.x,
+      this.player.y,
+      tgt.x,
+      tgt.y
+    );
 
     for (let i = 0; i < 4; i++) {
       const spread = Phaser.Math.DegToRad((i - 1.5) * 15);
       const ang = baseAng + spread;
-      const p = this.physics.add.sprite(this.player.x, this.player.y, 'staffProj')
+      const p = this.physics.add
+        .sprite(this.player.x, this.player.y, "staffProj")
         .setScale(0.08)
         .setRotation(ang);
 
@@ -719,7 +823,9 @@ class GameScene extends Phaser.Scene {
         this.applyDamage(enemy);
       });
 
-      this.time.delayedCall(2000, () => { if (p.active) p.destroy(); });
+      this.time.delayedCall(2000, () => {
+        if (p.active) p.destroy();
+      });
     }
   }
 
@@ -747,10 +853,12 @@ class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (Phaser.Input.Keyboard.JustDown(this.shieldKey)
-      && this.secondaryWeapon === 'shield'
-      && !this.isInvulnerable
-      && time - this.lastShieldTime >= this.shieldCooldown) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
+      this.secondaryWeapon === "shield" &&
+      !this.isInvulnerable &&
+      time - this.lastShieldTime >= this.shieldCooldown
+    ) {
       this.activateShield();
     }
 
@@ -783,7 +891,11 @@ class GameScene extends Phaser.Scene {
     this.checkEnemiesInRange();
     this.updateHPBar();
 
-    if (!this.physics.world.isPaused && this.regenHP > 0 && this.playerHealth < this.maxHealth) {
+    if (
+      !this.physics.world.isPaused &&
+      this.regenHP > 0 &&
+      this.playerHealth < this.maxHealth
+    ) {
       this.playerHealth = Math.min(
         this.maxHealth,
         this.playerHealth + (this.regenHP * this.game.loop.delta) / 1000
@@ -803,12 +915,13 @@ class GameScene extends Phaser.Scene {
       this.player.setVelocity(0, 0);
     }
 
-
-    this.enemies.getChildren().forEach(e => {
+    this.enemies.getChildren().forEach((e) => {
       const chase = new Phaser.Math.Vector2(
         this.player.x - e.x,
         this.player.y - e.y
-      ).normalize().scale(e.speed);
+      )
+        .normalize()
+        .scale(e.speed);
       e.setVelocity(chase.x, chase.y);
     });
   }
