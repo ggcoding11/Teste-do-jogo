@@ -4,8 +4,20 @@ class GameScene extends Phaser.Scene {
 
     // configurações que não mudam entre reinícios
     this.upgrades = [
-      { name: "Mais Dano", effect: () => (this.damageBonus += 15) },
-      { name: "Velocidade de Ataque", effect: () => (this.attackCooldown *= 0.8) },
+      {
+        name: "Mais Dano", effect: () => {
+          this.damageBonus += 15;
+          this.bowDamage += 15;
+          this.staffDamage += 15;
+        }
+      },
+      {
+        name: "Velocidade de Ataque", effect: () => {
+          this.attackCooldown *= 0.8;
+          this.bowCooldown *= 0.8;
+          this.staffCooldown *= 0.8;
+        }
+      },
       { name: "Vida Máxima Aumentada", effect: () => (this.maxHealth += 20) },
       { name: "Regeneração de HP", effect: () => (this.regenHP += 0.5) },
       { name: "Velocidade Aumentada", effect: () => (this.playerSpeed += 40) },
@@ -14,6 +26,9 @@ class GameScene extends Phaser.Scene {
 
   // chamado sempre que a cena inicia ou reinicia
   init() {
+    this.secondaryWeapon = null;   // 'bow' | 'staff' | 'shield'
+    this.passiveFireTimer = null;
+    this.isInvulnerable = false;
     this.wave = 1;
     this.maxWaves = 10;
     this.waveDuration = 20000;
@@ -23,6 +38,14 @@ class GameScene extends Phaser.Scene {
     this.maxHealth = 100;
     this.invulnerabilityCooldown = 200;
     this.lastDamageTime = 0;
+
+    this.shieldCooldown = 5000;      // tempo de reuso em ms
+    this.lastShieldTime = -Infinity; // marca a última vez que usou
+
+    this.bowDamage = 200;
+    this.staffDamage = 5;
+    this.bowCooldown = 1000; // ms
+    this.staffCooldown = 1500; // ms
 
     this.playerXP = 0;
     this.level = 1;
@@ -46,6 +69,7 @@ class GameScene extends Phaser.Scene {
     this.load.image("enemy1", "assets/enemy1.png");
     this.load.image("enemy2", "assets/enemy2.png");
     this.load.image("enemy3", "assets/enemy3.png");
+    this.load.image("miniboss1", "assets/miniboss1.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
@@ -58,6 +82,13 @@ class GameScene extends Phaser.Scene {
     this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.image("projetil", "assets/projetil.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
+    this.load.image('arrow', 'assets/arrow.png');       // flecha do arco
+    this.load.image('staffProj', 'assets/staff_proj.png'); // projétil do cajado
+
+    // ícones de power‐up
+    this.load.image('icon_bow', 'assets/icon_bow.png');
+    this.load.image('icon_staff', 'assets/icon_staff.png');
+    this.load.image('icon_shield', 'assets/icon_shield.png');
   }
 
   create() {
@@ -104,6 +135,15 @@ class GameScene extends Phaser.Scene {
 
     // grupo de inimigos
     this.enemies = this.physics.add.group();
+
+    this.powerUps = this.physics.add.group();           // itens no chão
+    this.shieldKey = this.input.keyboard.addKey('E');    // ativa escudo
+    // HUD: espaço para ícone (fixo no canto)
+    this.iconHUD = this.add.image(width - 20, 20, null)
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setScale(0.1)   // antes era 2, agora 1 (metade do tamanho)
+      .setDepth(1000);
 
     this.miniBossProjectiles = this.physics.add.group();
 
@@ -189,6 +229,14 @@ class GameScene extends Phaser.Scene {
           this.showGameOverScreen();
         }
       },
+      null,
+      this
+    );
+
+    this.physics.add.overlap(
+      this.player,
+      this.powerUps,
+      (player, drop) => this.pickupPowerUp(drop),
       null,
       this
     );
@@ -290,6 +338,9 @@ class GameScene extends Phaser.Scene {
   }
 
   takeDamage(player, enemy) {
+
+    if (this.isInvulnerable) return;
+
     const now = this.time.now;
     if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
     const d = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
@@ -381,12 +432,12 @@ class GameScene extends Phaser.Scene {
       callback: () => {
         if (this.time.now < this.waveEndTime) {
           // 1) sempre 3 inimigos normais
-          for (let i = 0; i < 3; i++) {
+          for (let i = 0; i < 2; i++) {
             this.spawnEnemyNearby();
           }
 
           // 2) na onda 5, também spawnar mini-boss *uma vez*
-          if (this.wave === 8 && !this.miniBossSpawned) {
+          if (this.wave === 1 && !this.miniBossSpawned) {
             this.spawnMiniBoss();
             this.miniBossSpawned = true;
           }
@@ -442,16 +493,28 @@ class GameScene extends Phaser.Scene {
     const x = this.player.x + Math.cos(ang) * dist;
     const y = this.player.y + Math.sin(ang) * dist;
 
-    // basear em enemy1, só maior e mais forte
-    this.miniBoss = this.enemies.create(x, y, "enemy1")
+    this.miniBoss = this.enemies.create(x, y, "miniboss1")
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 
-    this.miniBoss.health = 8000;  // vida aumentada
-    this.miniBoss.speed = 160;   // ligeiramente mais rápido
+    this.miniBoss.health = 100;  // vida aumentada
+    this.miniBoss.speed = 100;   // ligeiramente mais rápido
     this.miniBoss.damage = 30;    // contato, se quiser
 
-    this.miniBoss.setTint(0xffaa00);
+    this.miniBoss.once('destroy', () => {
+      const types = ['bow', 'staff', 'shield'];
+      const choice = Phaser.Math.RND.pick(types);
+      const spriteKey = {
+        bow: 'icon_bow',
+        staff: 'icon_staff',
+        shield: 'icon_shield'
+      }[choice];
+
+      const drop = this.powerUps.create(this.miniBoss.x, this.miniBoss.y, spriteKey);
+      drop.type = choice;
+      drop.setScale(0.1);
+      drop.setInteractive();
+    });
 
     // timer para atirar a cada 1.5s
     this.time.addEvent({
@@ -574,7 +637,123 @@ class GameScene extends Phaser.Scene {
     return closest;
   }
 
+  // <<< AQUI
+  pickupPowerUp(drop) {
+    // ao equipar, limpa timer anterior
+    if (this.passiveFireTimer) {
+      this.passiveFireTimer.remove();
+      this.passiveFireTimer = null;
+    }
+    this.secondaryWeapon = drop.type;
+    drop.destroy();
+    this.setupSecondaryWeapon();
+    // atualiza ícone no HUD
+    this.iconHUD.setTexture({
+      bow: 'icon_bow',
+      staff: 'icon_staff',
+      shield: 'icon_shield'
+    }[this.secondaryWeapon]);
+  }
+
+  setupSecondaryWeapon() {
+    if (this.secondaryWeapon === 'bow') {
+      this.passiveFireTimer = this.time.addEvent({
+        delay: this.bowCooldown,
+        loop: true,
+        callback: () => this.autoFireBow()
+      });
+    }
+    else if (this.secondaryWeapon === 'staff') {
+      this.passiveFireTimer = this.time.addEvent({
+        delay: this.staffCooldown,
+        loop: true,
+        callback: () => this.autoFireStaff()
+      });
+    }
+  }
+
+
+  autoFireBow() {
+    if (this.isGameOver) return;
+    const tgt = this.getClosestEnemy();
+    if (!tgt) return;
+
+    // alcance (você já aumentou para 1900, por exemplo)
+    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, tgt.x, tgt.y);
+
+    const ang = Phaser.Math.Angle.Between(this.player.x, this.player.y, tgt.x, tgt.y);
+    const a = this.physics.add.sprite(this.player.x, this.player.y, 'arrow')
+      .setScale(0.15)
+      .setOrigin(0.5)
+      .setRotation(ang);
+
+    a.damage = this.bowDamage;
+    this.physics.velocityFromRotation(ang, 300, a.body.velocity);
+
+    this.physics.add.overlap(a, this.enemies, (proj, enemy) => {
+      this.applyDamage(enemy);
+      proj.destroy();
+    });
+    a.setCollideWorldBounds(true).body.onWorldBounds = true;
+    a.body.world.on('worldbounds', b => b.gameObject.destroy());
+  }
+
+
+  autoFireStaff() {
+    if (this.isGameOver) return;
+    const tgt = this.getClosestEnemy();
+    if (!tgt) return;
+    const baseAng = Phaser.Math.Angle.Between(this.player.x, this.player.y, tgt.x, tgt.y);
+
+    for (let i = 0; i < 4; i++) {
+      const spread = Phaser.Math.DegToRad((i - 1.5) * 15);
+      const ang = baseAng + spread;
+      const p = this.physics.add.sprite(this.player.x, this.player.y, 'staffProj')
+        .setScale(0.08)
+        .setRotation(ang);
+
+      p.damage = this.staffDamage;
+      this.physics.velocityFromRotation(ang, 400, p.body.velocity);
+
+      this.physics.add.overlap(p, this.enemies, (proj, enemy) => {
+        this.applyDamage(enemy);
+      });
+
+      this.time.delayedCall(2000, () => { if (p.active) p.destroy(); });
+    }
+  }
+
+  activateShield() {
+    if (this.isInvulnerable) return;
+
+    // 1) ativa o escudo
+    this.isInvulnerable = true;
+    this.iconHUD.setAlpha(0.5);
+    this.player.setTint(0x00ffff);
+
+    // 2) depois de 3 s, desativa o escudo e só aí inicia o cooldown
+    this.time.delayedCall(1500, () => {
+      this.isInvulnerable = false;
+      this.player.clearTint();
+
+      // marca o momento em que o escudo terminou, para começar o cooldown
+      this.lastShieldTime = this.time.now;
+
+      // restaura o ícone após o cooldown
+      this.time.delayedCall(this.shieldCooldown, () => {
+        this.iconHUD.setAlpha(1);
+      });
+    });
+  }
+
   update(time, delta) {
+    if (Phaser.Input.Keyboard.JustDown(this.shieldKey)
+      && this.secondaryWeapon === 'shield'
+      && !this.isInvulnerable
+      && time - this.lastShieldTime >= this.shieldCooldown) {
+      this.activateShield();
+    }
+
     if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
       if (!this.isPaused) {
         // pause everything but keep Esc listener alive
@@ -631,11 +810,6 @@ class GameScene extends Phaser.Scene {
         this.player.y - e.y
       ).normalize().scale(e.speed);
       e.setVelocity(chase.x, chase.y);
-      if (e.damage > 20 &&
-        Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 100
-      ) {
-        e.setTint(0xff0000);
-      }
     });
   }
 }
