@@ -33,7 +33,7 @@ class GameScene extends Phaser.Scene {
     this.isInvulnerable = false;
     this.wave = 1;
     this.maxWaves = 10;
-    this.waveDuration = 20000;
+    this.waveDuration = 2000;
     this.attackCooldown = 1500;
     this.lastAttackTime = 0;
     this.playerHealth = 100;
@@ -508,8 +508,93 @@ class GameScene extends Phaser.Scene {
         this.wave++;
         this.startWave();
       } else {
-        this.waveText.setText("Fase concluída!");
+        this.waveText.setText("Boss chegando!");
+
+        this.time.delayedCall(2000, () => {
+          this.clearEnemies();
+          this.spawnBoss();
+        });
       }
+    });
+  }
+
+  clearEnemies() {
+    this.enemies.clear(true, true); // remove todos
+  }
+
+  spawnBoss() {
+    const { width, height } = this.sys.game.config;
+    const x = this.player.x + Phaser.Math.Between(-400, 400);
+    const y = this.player.y + Phaser.Math.Between(-400, 400);
+
+    this.boss = this.physics.add
+      .sprite(x, y, "miniboss1") // Usa o mesmo sprite por enquanto
+      .setScale(0.2)
+      .setCollideWorldBounds(true);
+
+    this.boss.health = 1000;
+    this.boss.speed = 200;
+    this.boss.damage = 50;
+
+    // Overlap boss x player
+    this.physics.add.overlap(this.player, this.boss, this.bossCollision, null, this);
+
+    // Iniciar o ataque especial
+    this.startBossPattern(1); // 1 = Boss 1 (só Dash)
+  }
+
+  startBossPattern(bossNumber) {
+    if (bossNumber === 1) {
+      this.time.addEvent({
+        delay: 2000,
+        loop: true,
+        callback: () => {
+          if (this.boss.active) {
+            this.bossDash();
+          }
+        }
+      });
+    }
+  }
+
+  bossDash() {
+    const angle = Phaser.Math.Angle.Between(
+      this.boss.x,
+      this.boss.y,
+      this.player.x,
+      this.player.y
+    );
+
+    // Dá um dash rápido em direção ao jogador
+    this.physics.velocityFromRotation(angle, 500, this.boss.body.velocity);
+
+    // Depois de 0.5 segundos ele para
+    this.time.delayedCall(500, () => {
+      if (this.boss.active) {
+        this.boss.setVelocity(0, 0);
+      }
+    });
+  }
+
+  bossCollision(player, boss) {
+    const now = this.time.now;
+    if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
+    this.lastDamageTime = now;
+
+    this.playerHealth = Math.max(0, this.playerHealth - boss.damage);
+    this.updateHPBar();
+
+    if (this.playerHealth <= 0) {
+      this.showGameOverScreen();
+    }
+
+    // Efeito de dano
+    this.tweens.add({
+      targets: player,
+      tint: 0xff0000,
+      duration: 100,
+      yoyo: true,
+      onComplete: () => player.clearTint(),
     });
   }
 
