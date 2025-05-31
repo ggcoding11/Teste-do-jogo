@@ -37,14 +37,43 @@ class GameScene extends Phaser.Scene {
   preload() {
     this.load.image("fase1_bg", "assets/fase1.png");
     this.load.image("player", "assets/player.png");
-    this.load.image("enemy1", "assets/enemy1.png");
-    this.load.image("enemy2", "assets/enemy2.png");
+    this.load.image("enemy1_walk_1", "assets/enemy1_walk_1.png");
+    this.load.image("enemy1_walk_2", "assets/enemy1_walk_2.png");
+    this.load.image("enemy1_walk_3", "assets/enemy1_walk_3.png");
+    this.load.image("enemy1_walk_4", "assets/enemy1_walk_4.png");
+    this.load.image("enemy2_walk_1", "assets/enemy2_walk_1.png");
+    this.load.image("enemy2_walk_2", "assets/enemy2_walk_2.png");
+    this.load.image("enemy2_walk_3", "assets/enemy2_walk_3.png");
     this.load.image("enemy3", "assets/enemy3.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
   }
 
   create() {
+    this.anims.create({
+      key: "enemy1_walk",
+      frames: [
+      { key: "enemy1_walk_1" },
+      { key: "enemy1_walk_2" },
+      { key: "enemy1_walk_3" },
+      { key: "enemy1_walk_4" }
+      ],
+      frameRate: 8,
+      repeat: -1
+    });
+    
+    this.anims.create({
+      key: "enemy2_walk",
+      frames: [
+      { key: "enemy2_walk_1" },
+      { key: "enemy2_walk_2" },
+      { key: "enemy2_walk_3" }
+      ],
+      frameRate: 6,
+      repeat: -1
+    });
+
+
     // reativa controles e física após reinício
     this.input.keyboard.enabled = true;
     this.physics.world.resume();
@@ -72,7 +101,22 @@ class GameScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys("W,A,S,D");
 
     // grupo de inimigos
-    this.enemies = this.physics.add.group();
+    this.enemies = this.physics.add.group(); // crie o grupo
+
+    const enemyPositions = [
+      { x: 100, y: 100, key: "enemy1_walk_1", anim: "enemy1_walk" },
+      { x: 200, y: 150, key: "enemy2_walk_1", anim: "enemy2_walk" },
+    ];
+
+  enemyPositions.forEach(pos => {
+    const enemy = this.enemies.create(pos.x, pos.y, pos.key);
+    enemy.setVelocity(Phaser.Math.Between(-100, 100), Phaser.Math.Between(-100, 100));
+    enemy.setBounce(1);
+    enemy.setCollideWorldBounds(true);
+    if (pos.anim) enemy.play(pos.anim);
+  });
+
+
 
     // texto de fase
     const phaseText = this.add
@@ -323,11 +367,12 @@ class GameScene extends Phaser.Scene {
     const st = statsMap[key];
 
     const e = this.enemies.create(x, y, key)
-      .setScale(this.player.scaleX)
+      .setScale(0.2)
       .setCollideWorldBounds(true);
     e.health = st.health;
     e.speed = st.speed;
     e.damage = st.damage;
+
   }
 
   checkEnemiesInRange() {
@@ -407,7 +452,7 @@ class GameScene extends Phaser.Scene {
   }
 
   update() {
-
+    
     if (this.physics.world.isPaused) {
       return;
     }
@@ -435,6 +480,13 @@ class GameScene extends Phaser.Scene {
       this.player.setVelocity(0, 0);
     }
 
+    this.enemies.getChildren().forEach(enemy => {
+  if (enemy.body.velocity.x < 0) {
+    enemy.setFlipX(true);  // virado para a esquerda
+  } else {
+    enemy.setFlipX(false); // virado para a direita
+  }
+});
 
     this.enemies.getChildren().forEach(e => {
       const chase = new Phaser.Math.Vector2(
@@ -449,4 +501,6 @@ class GameScene extends Phaser.Scene {
       }
     });
   }
+
+
 }
