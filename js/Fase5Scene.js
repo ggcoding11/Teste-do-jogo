@@ -155,7 +155,7 @@ class Fase5Scene extends Phaser.Scene {
 
     // texto de fase
     const phaseText = this.add
-      .text(width / 2, height - 280, "Fase 2 - Gula", {
+      .text(width / 2, height - 280, "Fase 5 - Violencia", {
         fontFamily: '"Press Start 2P"',
         fontSize: "20px",
         color: "#ffffff",
