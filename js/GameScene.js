@@ -87,6 +87,12 @@ class GameScene extends Phaser.Scene {
     this.load.image("arrow", "assets/arrow.png"); // flecha do arco
     this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
 
+    this.load.image('tornado1', 'assets/tornado1.png');
+    this.load.image('tornado2', 'assets/tornado2.png');
+    this.load.image('tornado3', 'assets/tornado3.png');
+    this.load.image('tornado4', 'assets/tornado4.png');
+
+
     // ícones de power‐up
     this.load.image("icon_bow", "assets/icon_bow.png");
     this.load.image("icon_staff", "assets/icon_staff.png");
@@ -94,6 +100,26 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
+
+    //Sophia test
+    this.anims.create({
+  key: 'tornadoSpin',
+  frames: [
+    { key: 'tornado1' },
+    { key: 'tornado2' },
+    { key: 'tornado3' },
+    { key: 'tornado4' }
+  ],
+  frameRate: 10,
+  repeat: -1
+});
+this.lastTornadoTime = 0;
+this.tornadoCooldown = 1000; // 1 segundo
+
+  this.input.keyboard.on('keydown-Q', () => {
+    this.tornadoAttack();
+    });
+
     // reativa controles e física após reinício
 
     this.time.paused = false;
@@ -300,7 +326,57 @@ class GameScene extends Phaser.Scene {
 
     // começa as ondas de inimigos
     this.startWave();
-  }
+   
+ }
+
+  //SOPHIA TORNAATO TESTE
+tornadoAttack() {
+  const now = this.time.now;
+  if (now - this.lastTornadoTime < this.tornadoCooldown) return;
+
+  this.lastTornadoTime = now;
+
+  const tornado = this.physics.add.sprite(this.player.x, this.player.y, 'tornado1');
+
+  const pointer = this.input.activePointer;
+  const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, pointer.worldX, pointer.worldY);
+  const velocity = this.physics.velocityFromRotation(angle, 400);
+
+  tornado.setVelocity(velocity.x, velocity.y);
+  tornado.rotation = angle;
+  tornado.setScale(1.5);
+  tornado.setAlpha(0.8);
+  tornado.play('tornadoSpin');
+
+  // Dano 50 por milissegundo = 50.000 por segundo, então aplicamos dano a cada 50ms: 50 * 50 = 2500 por tick
+  const damagePerTick = 50 * 50; // 2500 dano a cada 50ms
+  const damageInterval = 50; // ms
+
+  // Timer que aplica dano enquanto o tornado existir
+  const damageTimer = this.time.addEvent({
+    delay: damageInterval,
+    loop: true,
+    callback: () => {
+      // Verifica colisão do tornado com inimigos e aplica dano
+      this.enemies.children.iterate(enemy => {
+        if (enemy && this.physics.overlap(tornado, enemy)) {
+          if (enemy.takeDamage) enemy.takeDamage(damagePerTick);
+          else {
+            // Se não tiver takeDamage, subtraia health direto
+            enemy.health = (enemy.health || 100) - damagePerTick;
+            if (enemy.health <= 0) enemy.destroy();
+          }
+        }
+      });
+    }
+  });
+
+  // Destroi o tornado e o timer de dano após 1.5 segundos
+  this.time.delayedCall(1500, () => {
+    damageTimer.remove();
+    tornado.destroy();
+  });
+}
 
   updateHPBar() {
     const pct = Math.floor((this.playerHealth / this.maxHealth) * 100);
