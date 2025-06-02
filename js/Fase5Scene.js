@@ -66,7 +66,7 @@ class Fase5Scene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("fase1_bg", "assets/fase1.png");
+    this.load.image("fase5_bg", "assets/fase5.png");
     this.load.image("player", "assets/player.png");
     this.load.image("enemy1", "assets/enemy1.png");
     this.load.image("enemy2", "assets/enemy2.png");
@@ -124,7 +124,7 @@ class Fase5Scene extends Phaser.Scene {
     this.fase1Music.play();
 
     // cenário e limites
-    this.add.tileSprite(0, 0, mapSize, mapSize, "fase1_bg").setOrigin(0);
+    this.add.tileSprite(0, 0, mapSize, mapSize, "fase5_bg").setOrigin(0);
     this.physics.world.setBounds(0, 0, mapSize, mapSize);
     this.cameras.main.setBounds(0, 0, mapSize, mapSize);
 
@@ -518,7 +518,7 @@ class Fase5Scene extends Phaser.Scene {
       } else {
         this.waveText.setText("Fase concluída!");
         this.time.delayedCall(3000, () => {
-          this.scene.start("GameScene2"); // vai para a próxima fase
+          this.scene.start("Fase6Scene"); // vai para a próxima fase
         });
       }
     } else {
@@ -536,9 +536,9 @@ class Fase5Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      enemy1: { health: 250, speed: 130, damage: 10 },
-      enemy2: { health: 400, speed: 120, damage: 20 },
-      enemy3: { health: 600, speed: 80, damage: 30 },
+      enemy1: { health: 600, speed: 170, damage: 40 },
+      enemy2: { health: 800, speed: 160, damage: 50 },
+      enemy3: { health: 1100, speed: 120, damage: 70 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];
@@ -573,9 +573,9 @@ class Fase5Scene extends Phaser.Scene {
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 
-    this.miniBoss.health = 1500; // vida aumentada
-    this.miniBoss.speed = 80; // ligeiramente mais rápido
-    this.miniBoss.damage = 35; // contato, se quiser
+    this.miniBoss.health = 3500; // vida aumentada
+    this.miniBoss.speed = 120; // ligeiramente mais rápido
+    this.miniBoss.damage = 80; // contato, se quiser
 
     this.miniBoss.once("destroy", () => {
       const types = ["bow", "staff", "shield"];
@@ -622,7 +622,7 @@ class Fase5Scene extends Phaser.Scene {
     );
 
     // 4) Dá dano menor, se quiser
-    proj.damage = 20;
+    proj.damage = 50;
 
     // 5) Velocidade em direção ao jogador
     const angle = Phaser.Math.Angle.Between(

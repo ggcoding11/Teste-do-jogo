@@ -29,6 +29,11 @@ class LoadingScene extends Phaser.Scene {
 
     // Carregar todos os assets necessários
     this.load.image("fase1_bg", "assets/fase1.png");
+    this.load.image("fase2_bg", "assets/fase2.png");
+    this.load.image("fase3_bg", "assets/fase3.png");
+    this.load.image("fase4_bg", "assets/fase4.png");
+    this.load.image("fase5_bg", "assets/fase5.png");
+    this.load.image("fase6_bg", "assets/fase6.png");
     this.load.image("player", "assets/player.png");
     this.load.image("enemy1", "assets/enemy1.png");
     this.load.image("enemy2", "assets/enemy2.png");
