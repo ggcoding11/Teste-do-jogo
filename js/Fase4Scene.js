@@ -518,6 +518,8 @@ class Fase4Scene extends Phaser.Scene {
       } else {
         this.waveText.setText("Fase concluída!");
         this.time.delayedCall(3000, () => {
+          this.fase4Music.stop(); // para a música
+          this.scene.stop("Fase4Scene"); // força parar a cena atual
           this.scene.start("Fase5Scene"); // vai para a próxima fase
         });
       }
