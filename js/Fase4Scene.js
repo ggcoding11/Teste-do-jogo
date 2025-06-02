@@ -83,7 +83,7 @@ class Fase4Scene extends Phaser.Scene {
     this.load.audio("morte7", "assets/morte7.mp3");
     this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.image("projetil", "assets/projetil.png");
-    this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
+    this.load.audio("musica_fase4", "assets/musica-fase4.mp3");
     this.load.image("arrow", "assets/arrow.png"); // flecha do arco
     this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
 
@@ -117,7 +117,7 @@ class Fase4Scene extends Phaser.Scene {
     const mapSize = 3000;
 
     // música de fundo
-    this.fase1Music = this.sound.add("musica_fase1", {
+    this.fase1Music = this.sound.add("musica_fase4", {
       loop: true,
       volume: 0.5,
     });
