@@ -32,7 +32,7 @@ class Fase6Scene extends Phaser.Scene {
     this.passiveFireTimer = null;
     this.isInvulnerable = false;
     this.wave = 1;
-    this.maxWaves = 10;
+    this.maxWaves = 1;
     this.waveDuration = 20000;
     this.attackCooldown = 1500;
     this.lastAttackTime = 0;
@@ -46,7 +46,7 @@ class Fase6Scene extends Phaser.Scene {
 
     this.staffDamage = 25; // por projétil
     this.staffCooldown = 1700;
-    this.bowDamage = 150;
+    this.bowDamage = 80;
     this.bowCooldown = 1200; // mais lento
 
     this.playerXP = 0;
@@ -117,11 +117,11 @@ class Fase6Scene extends Phaser.Scene {
     const mapSize = 3000;
 
     // música de fundo
-    this.fase1Music = this.sound.add("musica_fase6", {
+    this.fase6Music = this.sound.add("musica_fase6", {
       loop: true,
       volume: 0.5,
     });
-    this.fase1Music.play();
+    this.fase6Music.play();
 
     // cenário e limites
     this.add.tileSprite(0, 0, mapSize, mapSize, "fase6_bg").setOrigin(0);
@@ -450,7 +450,7 @@ class Fase6Scene extends Phaser.Scene {
       .setInteractive();
 
     btn.on("pointerdown", () => {
-      if (this.fase1Music) this.fase1Music.stop();
+      if (this.fase6Music) this.fase6Music.stop();
       this.scene.restart(); // dispara init()+preload()+create()
     });
 
@@ -468,7 +468,7 @@ class Fase6Scene extends Phaser.Scene {
       .setInteractive();
 
     menuBtn.on("pointerdown", () => {
-      if (this.fase1Music) this.fase1Music.stop();
+      if (this.fase6Music) this.fase6Music.stop();
       this.scene.start("TitleScene"); // vai para a cena de título
     });
 
