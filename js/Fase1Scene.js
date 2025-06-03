@@ -864,7 +864,7 @@ class Fase1Scene extends Phaser.Scene {
 
     const tornado = this.physics.add
       .sprite(this.player.x, this.player.y, "tornado1")
-      .setScale(0.8);
+      .setScale(0.9);
 
     tornado.anims.play("tornado_spin");
     tornado.damage = this.bowDamage;
