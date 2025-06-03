@@ -32,8 +32,8 @@ class Fase3Scene extends Phaser.Scene {
     this.passiveFireTimer = null;
     this.isInvulnerable = false;
     this.wave = 1;
-    this.maxWaves = 10;
-    this.waveDuration = 20000;
+    this.maxWaves = 8;
+    this.waveDuration = 15000;
     this.attackCooldown = 1500;
     this.lastAttackTime = 0;
     this.playerHealth = 100;

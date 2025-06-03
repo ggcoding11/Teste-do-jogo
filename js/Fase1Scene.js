@@ -32,8 +32,8 @@ class Fase1Scene extends Phaser.Scene {
     this.passiveFireTimer = null;
     this.isInvulnerable = false;
     this.wave = 1;
-    this.maxWaves = 10;
-    this.waveDuration = 20000;
+    this.maxWaves = 8;
+    this.waveDuration = 15000;
     this.attackCooldown = 1500;
     this.lastAttackTime = 0;
     this.playerHealth = 100;
@@ -595,7 +595,7 @@ class Fase1Scene extends Phaser.Scene {
 
     this.miniBoss.once("destroy", () => {
       const types = ["bow", "staff", "shield"];
-      const choice = "bow";
+      const choice = Phaser.Math.RND.pick(types);
       const spriteKey = {
         bow: "icon_tornado",
         staff: "icon_staff",
@@ -782,6 +782,38 @@ class Fase1Scene extends Phaser.Scene {
         delay: this.staffCooldown,
         loop: true,
         callback: () => this.autoFireStaff(),
+      });
+    }
+  }
+
+  autoFireStaff() {
+    if (this.isGameOver) return;
+    const tgt = this.getClosestEnemy();
+    if (!tgt) return;
+    const baseAng = Phaser.Math.Angle.Between(
+      this.player.x,
+      this.player.y,
+      tgt.x,
+      tgt.y
+    );
+
+    for (let i = 0; i < 4; i++) {
+      const spread = Phaser.Math.DegToRad((i - 1.5) * 15);
+      const ang = baseAng + spread;
+      const p = this.physics.add
+        .sprite(this.player.x, this.player.y, "staffProj")
+        .setScale(0.08)
+        .setRotation(ang);
+
+      p.damage = this.staffDamage;
+      this.physics.velocityFromRotation(ang, 400, p.body.velocity);
+
+      this.physics.add.overlap(p, this.enemies, (proj, enemy) => {
+        this.applyDamage(enemy);
+      });
+
+      this.time.delayedCall(2000, () => {
+        if (p.active) p.destroy();
       });
     }
   }
