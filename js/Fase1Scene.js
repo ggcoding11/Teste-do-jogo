@@ -169,13 +169,6 @@ class Fase1Scene extends Phaser.Scene {
 
     this.tornadoKey = this.input.keyboard.addKey("Q"); // tecla Q pra ativar Tornado
 
-    this.iconTornadoHUD = this.add
-      .image(width - 60, 20, "icon_tornado") // distancia um pouquinho do ícone anterior
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setScale(0.1)
-      .setDepth(1000);
-
     // texto de fase
     const phaseText = this.add
       .text(width / 2, height - 280, "Fase 1 - Luxúria", {
@@ -889,11 +882,11 @@ class Fase1Scene extends Phaser.Scene {
     this.lastTornadoTime = this.time.now;
 
     // 3) Deixa o ícone semi-transparente
-    this.iconTornadoHUD.setAlpha(0.5);
+    this.iconHUD.setAlpha(0.5);
 
     // 4) Depois de cooldown, volta a alpha normal
     this.time.delayedCall(this.tornadoCooldown, () => {
-      this.iconTornadoHUD.setAlpha(1);
+      this.iconHUD.setAlpha(1);
     });
   }
 
