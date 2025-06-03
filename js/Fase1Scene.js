@@ -589,9 +589,11 @@ class Fase1Scene extends Phaser.Scene {
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 
-    this.miniBoss.health = 70; // vida aumentada
-    this.miniBoss.speed = 80; // ligeiramente mais rápido
-    this.miniBoss.damage = 35; // contato, se quiser
+    this.miniBoss.health = 1500;
+    this.miniBoss.speed = 80;
+    this.miniBoss.damage = 40;
+
+    
 
     this.miniBoss.once("destroy", () => {
       const types = ["bow", "staff", "shield"];
