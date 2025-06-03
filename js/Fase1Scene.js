@@ -605,7 +605,7 @@ class Fase1Scene extends Phaser.Scene {
       const types = ["bow", "staff", "shield"];
       const choice = "bow";
       const spriteKey = {
-        bow: "icon_bow",
+        bow: "icon_tornado",
         staff: "icon_staff",
         shield: "icon_shield",
       }[choice];
@@ -777,7 +777,7 @@ class Fase1Scene extends Phaser.Scene {
     // atualiza ícone no HUD
     this.iconHUD.setTexture(
       {
-        bow: "icon_bow",
+        bow: "icon_tornado",
         staff: "icon_staff",
         shield: "icon_shield",
       }[this.secondaryWeapon]
