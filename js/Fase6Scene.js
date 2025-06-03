@@ -86,7 +86,6 @@ class Fase6Scene extends Phaser.Scene {
     this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.image("projetil", "assets/projetil.png");
     this.load.audio("musica_fase6", "assets/musica-fase6.mp3");
-    this.load.image("arrow", "assets/arrow.png"); // flecha do arco
     this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
 
     // ícones de power‐up
