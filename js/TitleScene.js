@@ -1,5 +1,4 @@
 class TitleScene extends Phaser.Scene {
-
   constructor() {
     super('TitleScene');
 
@@ -16,7 +15,6 @@ class TitleScene extends Phaser.Scene {
     this.load.image('title_bg', 'assets/bg.png'); // imagem da tela inicial
     this.load.audio('menu_music', 'assets/musica-menu-titulo.mp3');
   }
-  
 
   create() {
     this.add.image(683, 384, 'title_bg');
@@ -27,8 +25,6 @@ class TitleScene extends Phaser.Scene {
       this.sound.context.resume(); // Resume o AudioContext antes de tocar a música
     }
     this.menuMusic.play();
-
-
 
     const titleText = this.add.text(683, 200, 'O PREÇO DO NOME', {
       fontFamily: '"Press Start 2P"',
