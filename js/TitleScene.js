@@ -18,8 +18,6 @@ class TitleScene extends Phaser.Scene {
     }
     this.menuMusic.play();
 
-
-
     const titleText = this.add.text(683, 200, 'O PREÇO DO NOME', {
       fontFamily: '"Press Start 2P"',
       fontSize: '32px',
