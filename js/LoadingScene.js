@@ -56,6 +56,10 @@ class LoadingScene extends Phaser.Scene {
     this.load.audio("musica_fase4", "assets/musica-fase4.mp3");
     this.load.audio("musica_fase5", "assets/musica-fase5.mp3");
     this.load.audio("musica_fase6", "assets/musica-fase6.mp3");
+    this.load.image("tornado1", "assets/tornado1.png");
+    this.load.image("tornado2", "assets/tornado2.png");
+    this.load.image("tornado3", "assets/tornado3.png");
+    this.load.image("tornado4", "assets/tornado4.png");
     this.load.image("arrow", "assets/arrow.png"); // flecha do arco
     this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
 
