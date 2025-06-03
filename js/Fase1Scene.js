@@ -787,38 +787,6 @@ class Fase1Scene extends Phaser.Scene {
     }
   }
 
-  autoFireStaff() {
-    if (this.isGameOver) return;
-    const tgt = this.getClosestEnemy();
-    if (!tgt) return;
-    const baseAng = Phaser.Math.Angle.Between(
-      this.player.x,
-      this.player.y,
-      tgt.x,
-      tgt.y
-    );
-
-    for (let i = 0; i < 4; i++) {
-      const spread = Phaser.Math.DegToRad((i - 1.5) * 15);
-      const ang = baseAng + spread;
-      const p = this.physics.add
-        .sprite(this.player.x, this.player.y, "staffProj")
-        .setScale(0.08)
-        .setRotation(ang);
-
-      p.damage = this.staffDamage;
-      this.physics.velocityFromRotation(ang, 400, p.body.velocity);
-
-      this.physics.add.overlap(p, this.enemies, (proj, enemy) => {
-        this.applyDamage(enemy);
-      });
-
-      this.time.delayedCall(2000, () => {
-        if (p.active) p.destroy();
-      });
-    }
-  }
-
   activateShield() {
     if (this.isInvulnerable) return;
 

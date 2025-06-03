@@ -43,6 +43,8 @@ class Fase2Scene extends Phaser.Scene {
 
     this.shieldCooldown = 6000; // tempo de reuso em ms
     this.lastShieldTime = -Infinity; // marca a última vez que usou
+    this.tornadoCooldown = 5000; // 5 segundos
+    this.lastTornadoTime = -Infinity;
 
     this.staffDamage = 25; // por projétil
     this.staffCooldown = 1700;
@@ -88,13 +90,26 @@ class Fase2Scene extends Phaser.Scene {
     this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
 
     // ícones de power‐up
-    this.load.image("icon_bow", "assets/icon_bow.png");
+    // ícones de power‐up
+    this.load.image("icon_tornado", "assets/icon_tornado.png");
     this.load.image("icon_staff", "assets/icon_staff.png");
     this.load.image("icon_shield", "assets/icon_shield.png");
   }
 
   create() {
     // reativa controles e física após reinício
+
+    this.anims.create({
+      key: "tornado_spin",
+      frames: [
+        { key: "tornado1" },
+        { key: "tornado2" },
+        { key: "tornado3" },
+        { key: "tornado4" },
+      ],
+      frameRate: 10,
+      repeat: -1, // looping infinito enquanto o tornado existir
+    });
 
     this.time.paused = false;
     this.input.keyboard.enabled = true;
@@ -152,6 +167,8 @@ class Fase2Scene extends Phaser.Scene {
       .setDepth(1000);
 
     this.miniBossProjectiles = this.physics.add.group();
+
+    this.tornadoKey = this.input.keyboard.addKey("Q"); // tecla Q pra ativar Tornado
 
     // texto de fase
     const phaseText = this.add
@@ -518,9 +535,9 @@ class Fase2Scene extends Phaser.Scene {
       } else {
         this.waveText.setText("Fase concluída!");
         this.time.delayedCall(3000, () => {
-            this.fase2Music.stop(); // para a música
-            this.scene.stop("Fase2Scene"); // força parar a cena atual
-            this.scene.start("Fase3Scene"); // vai para a próxima fase
+          this.fase2Music.stop(); // para a música
+          this.scene.stop("Fase2Scene"); // força parar a cena atual
+          this.scene.start("Fase3Scene"); // vai para a próxima fase
         });
       }
     } else {
@@ -528,7 +545,6 @@ class Fase2Scene extends Phaser.Scene {
       this.time.delayedCall(1000, () => this.checkEndOfWave());
     }
   }
-
 
   spawnEnemyNearby() {
     const minD = 600,
@@ -583,7 +599,7 @@ class Fase2Scene extends Phaser.Scene {
       const types = ["bow", "staff", "shield"];
       const choice = Phaser.Math.RND.pick(types);
       const spriteKey = {
-        bow: "icon_bow",
+        bow: "icon_tornado",
         staff: "icon_staff",
         shield: "icon_shield",
       }[choice];
@@ -755,7 +771,7 @@ class Fase2Scene extends Phaser.Scene {
     // atualiza ícone no HUD
     this.iconHUD.setTexture(
       {
-        bow: "icon_bow",
+        bow: "icon_tornado",
         staff: "icon_staff",
         shield: "icon_shield",
       }[this.secondaryWeapon]
@@ -763,59 +779,13 @@ class Fase2Scene extends Phaser.Scene {
   }
 
   setupSecondaryWeapon() {
-    if (this.secondaryWeapon === "bow") {
-      this.passiveFireTimer = this.time.addEvent({
-        delay: this.bowCooldown,
-        loop: true,
-        callback: () => this.autoFireBow(),
-      });
-    } else if (this.secondaryWeapon === "staff") {
+    if (this.secondaryWeapon === "staff") {
       this.passiveFireTimer = this.time.addEvent({
         delay: this.staffCooldown,
         loop: true,
         callback: () => this.autoFireStaff(),
       });
     }
-  }
-
-  autoFireBow() {
-    if (this.isGameOver) return;
-    const tgt = this.getClosestEnemy();
-    if (!tgt) return;
-
-    const ang = Phaser.Math.Angle.Between(
-      this.player.x,
-      this.player.y,
-      tgt.x,
-      tgt.y
-    );
-    const a = this.physics.add
-      .sprite(this.player.x, this.player.y, "arrow")
-      .setScale(0.05)
-      .setOrigin(0.5)
-      .setRotation(ang);
-
-    a.damage = this.bowDamage;
-
-    // define a velocidade da flecha
-    this.physics.velocityFromRotation(ang, 300, a.body.velocity);
-
-    // colisão com inimigos sem destruir a flecha
-    this.physics.add.overlap(a, this.enemies, (proj, enemy) => {
-      this.applyDamage(enemy);
-    });
-
-    // destrói ao sair do mundo
-    a.setCollideWorldBounds(true);
-    a.body.onWorldBounds = true;
-    a.body.world.on("worldbounds", (body) => {
-      if (body.gameObject === a) a.destroy();
-    });
-
-    // destrói depois de 2 segundos
-    this.time.delayedCall(2000, () => {
-      if (a.active) a.destroy();
-    });
   }
 
   autoFireStaff() {
@@ -873,7 +843,64 @@ class Fase2Scene extends Phaser.Scene {
     });
   }
 
+  activateTornado() {
+    if (this.isGameOver) return;
+
+    const tgt = this.getClosestEnemy();
+    if (!tgt) return; // não cria tornado à toa se não tem inimigo
+
+    const ang = Phaser.Math.Angle.Between(
+      this.player.x,
+      this.player.y,
+      tgt.x,
+      tgt.y
+    );
+
+    const tornado = this.physics.add
+      .sprite(this.player.x, this.player.y, "tornado1")
+      .setScale(0.9);
+
+    tornado.anims.play("tornado_spin");
+    tornado.damage = this.bowDamage;
+
+    this.physics.velocityFromRotation(ang, 400, tornado.body.velocity);
+
+    this.physics.add.overlap(tornado, this.enemies, (proj, enemy) => {
+      this.applyDamage(enemy);
+    });
+
+    tornado.setCollideWorldBounds(true);
+    tornado.body.onWorldBounds = true;
+    tornado.body.world.on("worldbounds", (body) => {
+      if (body.gameObject === tornado) tornado.destroy();
+    });
+
+    this.time.delayedCall(3000, () => {
+      if (tornado.active) tornado.destroy();
+    });
+
+    // 2) Começa o cooldown
+    this.lastTornadoTime = this.time.now;
+
+    // 3) Deixa o ícone semi-transparente
+    this.iconHUD.setAlpha(0.5);
+
+    // 4) Depois de cooldown, volta a alpha normal
+    this.time.delayedCall(this.tornadoCooldown, () => {
+      this.iconHUD.setAlpha(1);
+    });
+  }
+
   update(time, delta) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
+      this.secondaryWeapon === "shield" &&
+      !this.isInvulnerable &&
+      time - this.lastShieldTime >= this.shieldCooldown
+    ) {
+      this.activateShield();
+    }
+
     if (
       Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
       this.secondaryWeapon === "shield" &&
