@@ -32,7 +32,7 @@ class Fase5Scene extends Phaser.Scene {
     this.passiveFireTimer = null;
     this.isInvulnerable = false;
     this.wave = 1;
-    this.maxWaves = 1;
+    this.maxWaves = 10;
     this.waveDuration = 20000;
     this.attackCooldown = 1500;
     this.lastAttackTime = 0;
@@ -510,7 +510,7 @@ class Fase5Scene extends Phaser.Scene {
             this.spawnEnemyNearby();
           }
 
-          if (this.wave === 5 && !this.miniBossSpawned) {
+          if (this.wave === 6 && !this.miniBossSpawned) {
             this.spawnMiniBoss();
             this.miniBossSpawned = true;
           }
