@@ -74,9 +74,18 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.load.image("bossProj", "assets/boss_proj.png");
   }
 
+  setRandomBossDirection() {
+  if (!this.boss || this.isGameOver) return;
+
+  const angle = Phaser.Math.Between(0, 359); 
+  const velocity = this.physics.velocityFromAngle(angle, this.bossSpeed);
+  this.boss.body.setVelocity(velocity.x, velocity.y);
+  }
+
   create() {
     const { width, height } = this.sys.game.config;
-    const mapSize = 3000;
+    const mapWidth = this.scale.width;
+    const mapHeight = this.scale.height;
 
     this.fase1Music = this.sound.add("musica_fase1", {
       loop: true,
@@ -84,15 +93,16 @@ class FaseSecretaBossScene extends Phaser.Scene {
     });
     this.fase1Music.play();
 
-    this.add.tileSprite(0, 0, mapSize, mapSize, "fase1_bg").setOrigin(0);
-    this.physics.world.setBounds(0, 0, mapSize, mapSize);
-    this.cameras.main.setBounds(0, 0, mapSize, mapSize);
+    this.add.image(mapWidth / 2, mapHeight / 2, "fase1_bg").setDisplaySize(mapWidth, mapHeight);
+    this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
+    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
 
     this.player = this.physics.add
-      .sprite(mapSize / 2, mapSize / 2, "player")
-      .setScale(0.08)
+      this.player = this.physics.add
+      .sprite(mapWidth / 2, mapHeight / 2, "player")
+      .setScale(0.065)
       .setCollideWorldBounds(true);
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    //this.cameras.main.startFollow(this.player, true, 0.1, 0.1); //remover o movimento da camera
 
     this.keys = this.input.keyboard.addKeys("W,A,S,D");
 
@@ -118,7 +128,11 @@ class FaseSecretaBossScene extends Phaser.Scene {
     );
 
     // Cria o boss no centro do mapa
-    this.boss = this.add.sprite(this.player.x + 300, this.player.y, "hugo_boss").setScale(0.3);
+    this.boss = this.physics.add
+    .sprite(this.player.x + 100, this.player.y, "hugo_boss")
+    .setScale(0.3)
+    .setCollideWorldBounds(true)
+    .setBounce(1); // rebote nas bordas
 
     // Grupo para projéteis do boss
     this.bossProjectiles = this.physics.add.group();
@@ -129,6 +143,14 @@ class FaseSecretaBossScene extends Phaser.Scene {
     loop: true,
     callback: this.bossAttack,
     callbackScope: this,
+    });
+
+    // Sequência de ataque lateral (esquerda → direita)
+    this.time.addEvent({
+      delay: 6000,
+      loop: true,
+      callback: this.executarSequenciaAtaqueLateral,
+      callbackScope: this,
     });
 
     this.iconHUD = this.add
@@ -181,6 +203,16 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
     this.secondaryWeapon = "shield";
     this.iconHUD.setTexture("icon_shield");
+
+    this.bossSpeed = 100; // velocidade do boss
+    this.setRandomBossDirection();
+
+    this.time.addEvent({
+      delay: 3000,
+      callback: this.setRandomBossDirection,
+      callbackScope: this,
+      loop: true
+    });
   }
 
   showGameOverScreen() {
@@ -320,6 +352,102 @@ class FaseSecretaBossScene extends Phaser.Scene {
     }
   }
 
+  avisarEDispararProjeteis(linhasY, direcao = "esquerda") {
+    const width = this.scale.width;
+
+    linhasY.forEach((y) => {
+      const aviso = this.add.rectangle(width / 2, y, width, 5, 0xff0000)
+        .setOrigin(0.5)
+        .setAlpha(0.7);
+
+      this.tweens.add({
+        targets: aviso,
+        alpha: 0,
+        yoyo: true,
+        repeat: 4,
+        duration: 75,
+        onComplete: () => {
+          aviso.destroy();
+
+          const xInicial = direcao === "esquerda" ? -50 : width + 50;
+          const velX = direcao === "esquerda" ? 600 : -600;
+
+          const proj = this.bossProjectiles.create(xInicial, y, "bossProj");
+          proj.setVelocityX(velX);
+          proj.setScale(0.2);
+          proj.damage = 15;
+
+          this.time.delayedCall(4000, () => {
+            if (proj.active) proj.destroy();
+          });
+        },
+      });
+    });
+  }
+
+  //ataque lateral esquerda -> direita
+
+  dispararAtaqueLateral() {
+    const width = this.scale.width;
+    const height = this.scale.height;
+
+    const linhasY = [25, height / 2, height - 25];
+
+    // Para cada linha (topo, meio, fundo)
+    linhasY.forEach((y) => {
+      // 1. Cria um aviso (linha vermelha piscando)
+      const aviso = this.add.rectangle(width / 2, y, width, 5, 0xff0000)
+        .setOrigin(0.5)
+        .setAlpha(0.7);
+
+      // 2. Pisca e depois dispara o projétil
+      this.tweens.add({
+        targets: aviso,
+        alpha: 0,
+        yoyo: true,
+        repeat: 4,
+        duration: 75,
+        onComplete: () => {
+          aviso.destroy();
+
+          // 3. Cria projétil na borda esquerda
+          const proj = this.bossProjectiles.create(-50, y, "bossProj");
+          proj.setVelocityX(400); // velocidade para a direita
+          proj.setScale(0.2);
+          proj.damage = 15;
+
+          // Destroi se sair da tela
+          this.time.delayedCall(4000, () => {
+            if (proj.active) proj.destroy();
+          });
+        },
+      });
+    });
+  }
+
+  //ataque lateral direita -> esquerda
+
+  executarSequenciaAtaqueLateral() {
+    const width = this.scale.width;
+    const height = this.scale.height;
+
+    const topo = 25;
+    const meio = height / 2;
+    const fundo = height - 25;
+
+    const topoMeio = (topo + meio) / 2;
+    const meioFundo = (meio + fundo) / 2;
+
+    // 1. Três projéteis da esquerda: topo, meio, fundo
+    this.avisarEDispararProjeteis([topo, meio, fundo], "esquerda");
+
+    // 2. Dois projéteis da direita, após 2 segundos: intermediárias
+    this.time.delayedCall(1000, () => {
+      this.avisarEDispararProjeteis([topoMeio, meioFundo], "direita");
+    });
+  }
+
+
   update(time, delta) {
     if (
         Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
@@ -369,17 +497,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
         this.maxHealth,
         this.playerHealth + (this.regenHP * this.game.loop.delta) / 1000
       );
-    }
-
-    // Regen de HP (se tiver)
-    if (
-        this.regenHP > 0 &&
-        this.playerHealth < this.maxHealth
-    ) {
-        this.playerHealth = Math.min(
-        this.maxHealth,
-        this.playerHealth + (this.regenHP * delta) / 1000
-        );
     }
 
     // Movimento do jogador (WASD)
@@ -445,40 +562,5 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.playerXP = 0;
     this.xpToNextLevel += Math.floor(100 * Math.pow(1.2, this.level - 1));
     this.levelText.setText(`Level: ${this.level}`);
-  }
-
-  showGameOverScreen() {
-    this.isGameOver = true;
-    this.physics.world.pause();
-    this.time.paused = true;
-    this.input.keyboard.enabled = false;
-
-    const { width, height } = this.scale;
-    this.add
-      .rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
-      .setOrigin(0.5);
-    this.add
-      .text(width / 2, height / 2 - 50, "GAME OVER", {
-        fontFamily: '"Press Start 2P"',
-        fontSize: "40px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
-
-    const btn = this.add
-      .text(width / 2, height / 2 + 50, "Reiniciar", {
-        fontFamily: '"Press Start 2P"',
-        fontSize: "24px",
-        color: "#ffffff",
-        backgroundColor: "rgba(0,0,0,0.7)",
-        padding: { x: 20, y: 10 },
-      })
-      .setOrigin(0.5)
-      .setInteractive();
-
-    btn.on("pointerdown", () => {
-      this.fase1Music.stop();
-      this.scene.restart();
-    });
   }
 }
