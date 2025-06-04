@@ -900,12 +900,10 @@ class Fase6Scene extends Phaser.Scene {
     }
 
     if (
-      Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
-      this.secondaryWeapon === "shield" &&
-      !this.isInvulnerable &&
-      time - this.lastShieldTime >= this.shieldCooldown
+      Phaser.Input.Keyboard.JustDown(this.tornadoKey) &&
+      time - this.lastTornadoTime >= this.tornadoCooldown
     ) {
-      this.activateShield();
+      this.activateTornado();
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
