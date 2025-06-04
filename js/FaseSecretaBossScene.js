@@ -72,6 +72,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.load.image("icon_shield", "assets/icon_shield.png");
     this.load.image("hugo_boss", "assets/hugo_boss.png");
     this.load.image("bossProj", "assets/boss_proj.png");
+    this.load.image("escorpiao", "assets/escorpião.png");
+    this.load.image("prova", "assets/prova.png");
   }
 
   setRandomBossDirection() {
@@ -100,7 +102,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.player = this.physics.add
       .sprite(mapWidth / 2, mapHeight / 2, "player")
       .setScale(0.065)
-      .setCollideWorldBounds(true);
+      .setCollideWorldBounds(true)
+      .setDepth(999);
     //this.cameras.main.startFollow(this.player, true, 0.1, 0.1); //remover o movimento da camera
 
     this.keys = this.input.keyboard.addKeys("W,A,S,D");
@@ -129,7 +132,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
     // Cria o boss no centro do mapa
     this.boss = this.physics.add
     .sprite(this.player.x + 100, this.player.y, "hugo_boss")
-    .setScale(0.3)
+    .setScale(0.1)
     .setCollideWorldBounds(true)
     .setBounce(1); // rebote nas bordas
 
@@ -341,7 +344,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
     linhasY.forEach((y) => {
       const aviso = this.add.rectangle(width / 2, y, width, 5, 0xff0000)
         .setOrigin(0.5)
-        .setAlpha(0.7);
+        .setAlpha(0.7)
+        .setDepth(998);
 
       this.tweens.add({
         targets: aviso,
@@ -355,9 +359,9 @@ class FaseSecretaBossScene extends Phaser.Scene {
           const xInicial = direcao === "esquerda" ? -50 : width + 50;
           const velX = direcao === "esquerda" ? 600 : -600;
 
-          const proj = this.bossProjectiles.create(xInicial, y, "bossProj");
+          const proj = this.bossProjectiles.create(xInicial, y, "escorpiao");
           proj.setVelocityX(velX);
-          proj.setScale(0.2);
+          proj.setScale(0.5);
           proj.damage = 15;
 
           this.time.delayedCall(4000, () => {
@@ -383,8 +387,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
       // 1. Cria um aviso (linha vermelha piscando)
       const aviso = this.add.rectangle(width / 2, y, width, 5, 0xff0000)
         .setOrigin(0.5)
-        .setAlpha(0.7);
-
+        .setAlpha(0.7)
+        .setDepth(998);
       // 2. Pisca e depois dispara o projétil
       this.tweens.add({
         targets: aviso,
@@ -396,9 +400,9 @@ class FaseSecretaBossScene extends Phaser.Scene {
           aviso.destroy();
 
           // 3. Cria projétil na borda esquerda
-          const proj = this.bossProjectiles.create(-50, y, "bossProj");
+          const proj = this.bossProjectiles.create(-50, y, "escorpiao");
           proj.setVelocityX(400); // velocidade para a direita
-          proj.setScale(0.2);
+          proj.setScale(0.5);
           proj.damage = 15;
 
           // Destroi se sair da tela
@@ -454,7 +458,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
         // Aviso circular no chão
         const aviso = this.add.circle(x, y, 80, 0xff0000, 0.5)
           .setDepth(999)
-          .setAlpha(0.7);
+          .setAlpha(0.7)
+          .setDepth(998);
 
         this.tweens.add({
           targets: aviso,
@@ -468,8 +473,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
         this.time.delayedCall(500, () => {
           aviso.destroy();
 
-          const proj = this.meteorProjectiles.create(x, -50, "bossProj");
-          proj.setScale(0.15);
+          const proj = this.meteorProjectiles.create(x, -50, "prova");
+          proj.setScale(0.075);
           proj.setVelocityY(600);
 
           const impactoY = y;
