@@ -98,7 +98,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
 
     this.player = this.physics.add
-      this.player = this.physics.add
       .sprite(mapWidth / 2, mapHeight / 2, "player")
       .setScale(0.065)
       .setCollideWorldBounds(true);
@@ -136,20 +135,29 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
     // Grupo para projéteis do boss
     this.bossProjectiles = this.physics.add.group();
+    this.meteorProjectiles = this.physics.add.group(); //grupo exclusivo
 
     // Timer de ataque do boss
-    this.time.addEvent({
+    /*this.time.addEvent({
     delay: 2000,
     loop: true,
     callback: this.bossAttack,
     callbackScope: this,
-    });
+    });*/
 
     // Sequência de ataque lateral (esquerda → direita)
     this.time.addEvent({
       delay: 6000,
       loop: true,
       callback: this.executarSequenciaAtaqueLateral,
+      callbackScope: this,
+    });
+
+    // Timer ataque meteoro
+    this.time.addEvent({
+      delay: 15000,
+      loop: true,
+      callback: this.executarAtaqueMeteoro,
       callbackScope: this,
     });
 
@@ -163,7 +171,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.miniBossProjectiles = this.physics.add.group();
 
     const tituloFase = this.add
-      .text(width / 2, height - 280, "Fase Secreta - Chefão", {
+      .text(width / 2, height - 280, "Fase Secreta", {
         fontFamily: '"Press Start 2P"',
         fontSize: "20px",
         color: "#ffffff",
@@ -182,21 +190,10 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.physics.add.overlap(
       this.player,
       this.bossProjectiles,
-        (player, proj) => {
-          const now = this.time.now;
-
-          if (this.isInvulnerable) return;
-          if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
-
-          this.lastDamageTime = now;
-          this.playerHealth = Math.max(0, this.playerHealth - proj.damage);
-          this.updateHPBar();
-          proj.destroy();
-
-          if (this.playerHealth <= 0) {
-          this.showGameOverScreen();
-          }
-        },
+      (player, proj) => {
+        this.takeDamage(proj.damage);
+        proj.destroy();
+      },
       null,
       this
     );
@@ -216,6 +213,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
   }
 
   showGameOverScreen() {
+    if (this.isGameOver) return;
     this.isGameOver = true;
 
     // para toda a física
@@ -254,8 +252,12 @@ class FaseSecretaBossScene extends Phaser.Scene {
       .setInteractive();
 
     btn.on("pointerdown", () => {
+      this.isGameOver = false;
+      this.time.paused = false;
+      this.physics.world.resume();
+      this.input.keyboard.enabled = true;
       if (this.fase1Music) this.fase1Music.stop();
-      this.scene.restart(); // dispara init()+preload()+create()
+      this.scene.restart();
     });
 
     const menuBtn = this.add
@@ -333,25 +335,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
       .setDepth(1000);
   }
 
-  bossAttack() {
-    if (!this.boss || this.isGameOver) return;
-
-    // Cria projétil na posição do boss
-    const proj = this.bossProjectiles.create(this.boss.x, this.boss.y, "bossProj");
-    proj.setScale(0.1);
-    proj.setVelocity(Phaser.Math.Between(-200, -100), Phaser.Math.Between(-50, 50));
-    proj.damage = 10;
-
-    // Destroi projétil após 4 segundos
-    this.time.delayedCall(4000, () => {
-        if (proj.active) proj.destroy();
-    });
-
-    if (this.playerHealth <= 0) {
-      this.showGameOverScreen();
-    }
-  }
-
   avisarEDispararProjeteis(linhasY, direcao = "esquerda") {
     const width = this.scale.width;
 
@@ -384,6 +367,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
       });
     });
   }
+
+  //---------------------------------------------ataques do boss---------------------------------------------
 
   //ataque lateral esquerda -> direita
 
@@ -434,21 +419,142 @@ class FaseSecretaBossScene extends Phaser.Scene {
     const topo = 25;
     const meio = height / 2;
     const fundo = height - 25;
-
     const topoMeio = (topo + meio) / 2;
     const meioFundo = (meio + fundo) / 2;
 
-    // 1. Três projéteis da esquerda: topo, meio, fundo
-    this.avisarEDispararProjeteis([topo, meio, fundo], "esquerda");
+    const inverter = Phaser.Math.Between(0, 1) === 1; // 50% de chance
 
-    // 2. Dois projéteis da direita, após 2 segundos: intermediárias
-    this.time.delayedCall(1000, () => {
-      this.avisarEDispararProjeteis([topoMeio, meioFundo], "direita");
+    if (!inverter) {
+      // Padrão original: 3 da esquerda, 2 da direita
+      this.avisarEDispararProjeteis([topo, meio, fundo], "esquerda");
+      this.time.delayedCall(1000, () => {
+        this.avisarEDispararProjeteis([topoMeio, meioFundo], "direita");
+      });
+    } else {
+      // Padrão invertido: 3 da direita, 2 da esquerda
+      this.avisarEDispararProjeteis([topo, meio, fundo], "direita");
+      this.time.delayedCall(1000, () => {
+        this.avisarEDispararProjeteis([topoMeio, meioFundo], "esquerda");
+      });
+    }
+  }
+
+  executarAtaqueMeteoro() {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const numProjeteis = 10;
+    const delayEntreProjeteis = 300;
+
+    for (let i = 0; i < numProjeteis; i++) {
+      const x = Phaser.Math.Between(100, width - 100);
+      const y = Phaser.Math.Between(100, height - 100);
+
+      // Define o tempo para cada projétil individualmente
+      this.time.delayedCall(i * delayEntreProjeteis, () => {
+        // Aviso circular no chão
+        const aviso = this.add.circle(x, y, 80, 0xff0000, 0.5)
+          .setDepth(999)
+          .setAlpha(0.7);
+
+        this.tweens.add({
+          targets: aviso,
+          alpha: 0,
+          yoyo: true,
+          repeat: 2,
+          duration: 100,
+        });
+
+        // Após o aviso, faz o projétil cair
+        this.time.delayedCall(500, () => {
+          aviso.destroy();
+
+          const proj = this.meteorProjectiles.create(x, -50, "bossProj");
+          proj.setScale(0.15);
+          proj.setVelocityY(600);
+
+          const impactoY = y;
+
+          // Quando atinge a área, explode
+          this.time.delayedCall(800, () => {
+            if (proj.active) {
+              proj.destroy();
+
+              const area = this.add.circle(x, impactoY, 80);
+              this.physics.add.existing(area);
+              area.body.setAllowGravity(false);
+              area.body.setCircle(80);
+              area.body.setOffset(-80, -80);
+              area.damage = 30;
+
+              this.physics.add.overlap(this.player, area, () => {
+                this.takeDamage(area.damage);
+                area.destroy(); // Para não tomar dano repetido
+              }, null, this);
+
+              this.time.delayedCall(300, () => {
+                if (area && area.destroy) area.destroy();
+              });
+            }
+          });
+        });
+      });
+    }
+  }
+
+  /*bossAttack() {
+    if (!this.boss || this.isGameOver) return;
+
+    // Cria projétil na posição do boss
+    const proj = this.bossProjectiles.create(this.boss.x, this.boss.y, "bossProj");
+    proj.setScale(0.1);
+    proj.setVelocity(Phaser.Math.Between(-200, -100), Phaser.Math.Between(-50, 50));
+    proj.damage = 10;
+
+    // Destroi projétil após 4 segundos
+    this.time.delayedCall(4000, () => {
+        if (proj.active) proj.destroy();
+    });
+
+    if (this.playerHealth <= 0) {
+      this.showGameOverScreen();
+    }
+  }*/
+
+  //------------------------------------------------------------------------------------------
+
+  //verificação de dano
+  takeDamage(amount) {
+    if (this.isInvulnerable || this.isGameOver) return;
+
+    if (typeof this.playerHealth !== "number" || isNaN(this.playerHealth)) {
+      this.playerHealth = this.maxHealth; // Reset ou fallback seguro
+    }
+
+    const now = this.time.now;
+    if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
+
+    this.lastDamageTime = now;
+    this.playerHealth = Math.max(0, this.playerHealth - amount);
+    this.updateHPBar();
+
+    if (this.playerHealth <= 0) {
+      this.showGameOverScreen();
+    }
+
+    this.tweens.add({
+      targets: this.player,
+      tint: 0xff0000,
+      duration: 100,
+      yoyo: true,
+      onComplete: () => this.player.clearTint(),
     });
   }
 
 
   update(time, delta) {
+    const hpRatio = Phaser.Math.Clamp(this.playerHealth / this.maxHealth, 0, 1);
+    this.hpBar.width = 200 * hpRatio;
+
     if (
         Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
         this.secondaryWeapon === "shield" &&
@@ -479,15 +585,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
       return;
     }
 
-    if (this.physics.world.isPaused) {
-      return;
-    }
-
-    // if paused, bail out early
-    if (this.isPaused) {
-      return;
-    }
-
     if (
       !this.physics.world.isPaused &&
       this.regenHP > 0 &&
@@ -511,6 +608,11 @@ class FaseSecretaBossScene extends Phaser.Scene {
         this.player.setFlipX(vec.x < 0);
     } else {
         this.player.setVelocity(0, 0);
+    }
+
+    if (this.playerHealth <= 0 && !this.isGameOver) {
+      this.showGameOverScreen();
+      return;
     }
   }
 
