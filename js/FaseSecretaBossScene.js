@@ -7,14 +7,12 @@ class FaseSecretaBossScene extends Phaser.Scene {
         name: "Mais Dano",
         effect: () => {
           this.damageBonus += 15;
-          this.staffDamage += 15;
         },
       },
       {
         name: "Velocidade de Ataque",
         effect: () => {
           this.attackCooldown *= 0.8;
-          this.staffCooldown *= 0.8;
         },
       },
       { name: "Vida Máxima Aumentada", effect: () => (this.maxHealth += 20) },
@@ -40,9 +38,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.lastTornadoTime = -Infinity;
 
 
-    this.staffDamage = 25;
-    this.staffCooldown = 1700;
-
     this.playerXP = 0;
     this.level = 1;
     this.xpToNextLevel = 100;
@@ -61,14 +56,11 @@ class FaseSecretaBossScene extends Phaser.Scene {
   preload() {
     this.load.image("chao", "assets/chão.png");
     this.load.image("player", "assets/player.png");
-    this.load.image("miniboss1", "assets/miniboss1.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
     this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
-    this.load.image("staffProj", "assets/staff_proj.png");
-    this.load.image("icon_staff", "assets/icon_staff.png");
     this.load.image("icon_shield", "assets/icon_shield.png");
     this.load.image("hugo_boss", "assets/hugo_boss.png");
     this.load.image("bossProj", "assets/boss_proj.png");
@@ -204,8 +196,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setScale(0.1)
       .setDepth(1000);
-
-    this.miniBossProjectiles = this.physics.add.group();
 
     const tituloFase = this.add
       .text(width / 2, height - 280, "Fase Secreta", {
