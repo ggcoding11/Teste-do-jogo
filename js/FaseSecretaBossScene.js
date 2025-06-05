@@ -7,7 +7,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
         name: "Mais Dano",
         effect: () => {
           this.damageBonus += 15;
-          this.bowDamage += 15;
           this.staffDamage += 15;
         },
       },
@@ -15,7 +14,6 @@ class FaseSecretaBossScene extends Phaser.Scene {
         name: "Velocidade de Ataque",
         effect: () => {
           this.attackCooldown *= 0.8;
-          this.bowCooldown *= 0.8;
           this.staffCooldown *= 0.8;
         },
       },
@@ -38,11 +36,12 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
     this.shieldCooldown = 6000;
     this.lastShieldTime = -Infinity;
+    this.tornadoCooldown = 5000;
+    this.lastTornadoTime = -Infinity;
+
 
     this.staffDamage = 25;
     this.staffCooldown = 1700;
-    this.bowDamage = 80;
-    this.bowCooldown = 1200;
 
     this.playerXP = 0;
     this.level = 1;
@@ -53,11 +52,14 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.regenHP = 0;
     this.isGameOver = false;
 
+    this.bossMaxHealth = 150000;
+    this.bossHealth = this.bossMaxHealth;
+
     this.isPaused = false;
   }
 
   preload() {
-    this.load.image("fase1_bg", "assets/fase1.png");
+    this.load.image("chao", "assets/chão.png");
     this.load.image("player", "assets/player.png");
     this.load.image("miniboss1", "assets/miniboss1.png");
     this.load.image("rastro", "assets/rastro.png");
@@ -65,15 +67,19 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.load.audio("morte1", "assets/morte1.mp3");
     this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
-    this.load.image("arrow", "assets/arrow.png");
     this.load.image("staffProj", "assets/staff_proj.png");
-    this.load.image("icon_bow", "assets/icon_bow.png");
     this.load.image("icon_staff", "assets/icon_staff.png");
     this.load.image("icon_shield", "assets/icon_shield.png");
     this.load.image("hugo_boss", "assets/hugo_boss.png");
     this.load.image("bossProj", "assets/boss_proj.png");
     this.load.image("escorpiao", "assets/escorpião.png");
     this.load.image("prova", "assets/prova.png");
+    this.load.image("zip", "assets/zip.png");
+    this.load.image("tornado1", "assets/tornado1.png");
+    this.load.image("tornado2", "assets/tornado2.png");
+    this.load.image("tornado3", "assets/tornado3.png");
+    this.load.image("tornado4", "assets/tornado4.png");
+    this.load.image("icon_tornado", "assets/icon_tornado.png");
   }
 
   setRandomBossDirection() {
@@ -95,9 +101,17 @@ class FaseSecretaBossScene extends Phaser.Scene {
     });
     this.fase1Music.play();
 
-    this.add.image(mapWidth / 2, mapHeight / 2, "fase1_bg").setDisplaySize(mapWidth, mapHeight);
+    this.chaoTile = this.add.tileSprite(0, 0, mapWidth, mapHeight, "chao")
+      .setOrigin(0) // importante para alinhar no topo-esquerdo
+      .setTileScale(0.25);
     this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+
+    /*this.mostrarDialogoBoss([
+      "Você ousa desafiar o mestre deste lugar?",
+      "Eu sou Hugo, o verdadeiro guardião da fase secreta.",
+      "Prepare-se para ser destruído!"
+    ]);*/
 
     this.player = this.physics.add
       .sprite(mapWidth / 2, mapHeight / 2, "player")
@@ -164,12 +178,32 @@ class FaseSecretaBossScene extends Phaser.Scene {
       callbackScope: this,
     });
 
-    this.iconHUD = this.add
-    .image(this.scale.width - 20, 20, "icon_shield")
-    .setOrigin(1, 0)
-    .setScrollFactor(0)
-    .setScale(0.1)
-    .setDepth(1000);
+    // Timer ataque em leque
+    this.time.addEvent({
+      delay: 10000,
+      loop: true,
+      callback: this.executarAtaqueLeque,
+      callbackScope: this,
+    });
+
+    // Define armas ativas
+    this.secondaryWeapon = "shield"; // (mantém se necessário)
+
+    // Ícone do escudo (canto superior direito)
+    this.shieldIcon = this.add
+      .image(this.scale.width - 20, 20, "icon_shield")
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setScale(0.1)
+      .setDepth(1000);
+
+    // Ícone do tornado (ao lado do escudo)
+    this.tornadoIcon = this.add
+      .image(this.scale.width - 60, 20, "icon_tornado")
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setScale(0.1)
+      .setDepth(1000);
 
     this.miniBossProjectiles = this.physics.add.group();
 
@@ -202,10 +236,45 @@ class FaseSecretaBossScene extends Phaser.Scene {
     );
 
     this.secondaryWeapon = "shield";
-    this.iconHUD.setTexture("icon_shield");
 
-    this.bossSpeed = 100; // velocidade do boss
+    this.anims.create({
+      key: "tornado_spin",
+      frames: [
+        { key: "tornado1" },
+        { key: "tornado2" },
+        { key: "tornado3" },
+        { key: "tornado4" },
+      ],
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    this.tornadoKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE); // tecla de ativação = barra de espaço
+
+    this.bossSpeed = 100;
     this.setRandomBossDirection();
+
+    const barWidth = 500;
+    const barHeight = 20;
+
+    // Borda preta (atrás de tudo)
+    this.bossHPBorder = this.add.rectangle(this.scale.width / 2, 30, barWidth + 4, barHeight + 4, 0x000000)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(999);
+
+    // Fundo cinza (barra de fundo)
+    this.bossHPBarBG = this.add.rectangle(this.scale.width / 2, 30, barWidth, barHeight, 0x444444)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(1000);
+
+    // Barra vermelha (vida real do boss)
+    this.bossHPBar = this.add.rectangle(this.scale.width / 2, 30, barWidth, barHeight, 0xff0000)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(1001);
+
 
     this.time.addEvent({
       delay: 3000,
@@ -231,7 +300,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.add
       .rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
       .setOrigin(0.5)
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(1025);
     // texto
     this.add
       .text(width / 2, height / 2 - 50, "GAME OVER", {
@@ -240,7 +310,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
         color: "#ffffff",
       })
       .setOrigin(0.5)
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(1026);
     // botão Reiniciar
     const btn = this.add
       .text(width / 2, height / 2 + 50, "Reiniciar", {
@@ -252,7 +323,8 @@ class FaseSecretaBossScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setInteractive();
+      .setInteractive()
+      .setDepth(1026);
 
     btn.on("pointerdown", () => {
       this.isGameOver = false;
@@ -273,7 +345,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(1000)
+      .setDepth(1026)
       .setInteractive();
 
     menuBtn.on("pointerdown", () => {
@@ -283,6 +355,54 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
     this.physics.world.pause();
     this.input.keyboard.enabled = false;
+  }
+
+  mostrarTelaVitoria() {
+    const { width, height } = this.scale;
+
+    // fundo escuro
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(1025);
+
+    // título
+    this.add.text(width / 2, height / 2 - 60, "Vitória!", {
+      fontFamily: '"Press Start 2P"',
+      fontSize: "40px",
+      color: "#ffffff",
+    })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(1026);
+
+    // mensagem
+    this.add.text(width / 2, height / 2, "Você derrotou Hugo\nParabéns!", {
+      fontFamily: '"Press Start 2P"',
+      fontSize: "16px",
+      color: "#ffffff",
+      align: "center",
+    })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(1026);
+
+    // botão para voltar ao menu
+    const btn = this.add.text(width / 2, height / 2 + 80, "Voltar ao Início", {
+      fontFamily: '"Press Start 2P"',
+      fontSize: "20px",
+      color: "#ffffff",
+      backgroundColor: "rgba(0,0,0,0.7)",
+      padding: { x: 20, y: 10 },
+    })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setInteractive()
+      .setDepth(1026);
+
+    btn.on("pointerdown", () => {
+      this.scene.start("TitleScene");
+    });
   }
 
   createHUD() {
@@ -371,6 +491,72 @@ class FaseSecretaBossScene extends Phaser.Scene {
       });
     });
   }
+
+  /*mostrarDialogoBoss(frases) {
+  const { width, height } = this.scale;
+
+  this.physics.world.pause();
+  this.time.paused = true;
+
+  const caixa = this.add.rectangle(width / 2, height - 100, width - 100, 120, 0x000000, 0.8)
+    .setStrokeStyle(2, 0xffffff)
+    .setDepth(2000);
+
+  const portrait = this.add.image(80, height - 100, "hugo_boss")
+    .setScale(0.2)
+    .setDepth(2001)
+    .setOrigin(0.5);
+
+  const texto = this.add.text(140, height - 140, "", {
+    fontFamily: '"Press Start 2P"',
+    fontSize: "14px",
+    color: "#ffffff",
+    wordWrap: { width: width - 200 }
+  })
+    .setDepth(2001);
+
+  let indexFrase = 0;
+  let digitando = false;
+
+  const escreverTexto = (frase) => {
+    digitando = true;
+    texto.setText("");
+    let i = 0;
+
+    this.time.addEvent({
+      delay: 30,
+      repeat: frase.length - 1,
+      callback: () => {
+        texto.setText(texto.text + frase[i]);
+        i++;
+        if (i >= frase.length) digitando = false;
+      }
+    });
+  };
+
+  escreverTexto(frases[indexFrase]);
+
+  const avancarDialogo = () => {
+    if (digitando) return;
+
+    indexFrase++;
+    if (indexFrase < frases.length) {
+        escreverTexto(frases[indexFrase]);
+      } else {
+        caixa.destroy();
+        texto.destroy();
+        portrait.destroy();
+        this.input.keyboard.off("keydown-SPACE", avancarDialogo);
+        this.input.off("pointerdown", avancarDialogo);
+        this.physics.world.resume();
+        this.time.paused = false;
+      }
+    };
+
+    this.input.keyboard.on("keydown-SPACE", avancarDialogo);
+    this.input.on("pointerdown", avancarDialogo);
+  }*/
+
 
   //---------------------------------------------ataques do boss---------------------------------------------
 
@@ -478,9 +664,10 @@ class FaseSecretaBossScene extends Phaser.Scene {
           proj.setVelocityY(600);
 
           const impactoY = y;
+          const distancia = impactoY + 50; // de -50 até y final
+          const tempoQueda = distancia / 600 * 1000;
 
-          // Quando atinge a área, explode
-          this.time.delayedCall(800, () => {
+          this.time.delayedCall(tempoQueda, () => {
             if (proj.active) {
               proj.destroy();
 
@@ -493,7 +680,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
               this.physics.add.overlap(this.player, area, () => {
                 this.takeDamage(area.damage);
-                area.destroy(); // Para não tomar dano repetido
+                area.destroy();
               }, null, this);
 
               this.time.delayedCall(300, () => {
@@ -506,28 +693,33 @@ class FaseSecretaBossScene extends Phaser.Scene {
     }
   }
 
-  /*bossAttack() {
-    if (!this.boss || this.isGameOver) return;
+  executarAtaqueLeque() {
+    if (!this.boss || !this.player || this.isGameOver) return;
 
-    // Cria projétil na posição do boss
-    const proj = this.bossProjectiles.create(this.boss.x, this.boss.y, "bossProj");
-    proj.setScale(0.1);
-    proj.setVelocity(Phaser.Math.Between(-200, -100), Phaser.Math.Between(-50, 50));
-    proj.damage = 10;
+    const numProjetis = 5;
+    const spread = 40; // graus de abertura total do leque
+    const angleToPlayer = Phaser.Math.Angle.Between(this.boss.x, this.boss.y, this.player.x, this.player.y);
+    const angleDeg = Phaser.Math.RadToDeg(angleToPlayer);
+    const startAngle = angleDeg - spread / 2;
 
-    // Destroi projétil após 4 segundos
-    this.time.delayedCall(4000, () => {
+    for (let i = 0; i < numProjetis; i++) {
+      const angle = Phaser.Math.DegToRad(startAngle + (i * (spread / (numProjetis - 1))));
+      const velocity = this.physics.velocityFromRotation(angle, 300);
+
+      const proj = this.bossProjectiles.create(this.boss.x, this.boss.y, "zip");
+      proj.setScale(0.075);
+      proj.setVelocity(velocity.x, velocity.y);
+      proj.damage = 15;
+
+      this.time.delayedCall(4000, () => {
         if (proj.active) proj.destroy();
-    });
-
-    if (this.playerHealth <= 0) {
-      this.showGameOverScreen();
+      });
     }
-  }*/
+  }
 
   //------------------------------------------------------------------------------------------
 
-  //verificação de dano
+  //verificações de dano
   takeDamage(amount) {
     if (this.isInvulnerable || this.isGameOver) return;
 
@@ -555,11 +747,37 @@ class FaseSecretaBossScene extends Phaser.Scene {
     });
   }
 
+  bossTakeDamage(amount) {
+    if (!this.boss || this.isGameOver) return;
+
+    this.bossHealth = Math.max(0, this.bossHealth - amount);
+    this.updateBossHPBar();
+
+    if (this.bossHealth <= 0) {
+      this.boss.setTint(0x000000);
+      this.boss.setVelocity(0);
+      this.boss.disableBody(true, true);
+      this.fase1Music.stop();
+
+      // Congela tudo
+      this.physics.world.pause();
+      this.time.paused = true;
+      this.input.keyboard.enabled = false;
+
+      this.mostrarTelaVitoria();
+    }
+  }
+
+  updateBossHPBar() {
+    const pct = this.bossHealth / this.bossMaxHealth;
+    this.bossHPBar.width = 500 * pct;
+  }
 
   update(time, delta) {
     const hpRatio = Phaser.Math.Clamp(this.playerHealth / this.maxHealth, 0, 1);
     this.hpBar.width = 200 * hpRatio;
 
+    //detectar tecla do escudo
     if (
         Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
         this.secondaryWeapon === "shield" &&
@@ -569,21 +787,27 @@ class FaseSecretaBossScene extends Phaser.Scene {
         this.activateShield();
     }
 
+    //detectar tecla do tornado
+    if (
+      Phaser.Input.Keyboard.JustDown(this.tornadoKey) &&
+      time - this.lastTornadoTime >= this.tornadoCooldown
+    ) {
+      this.activateTornado();
+    }
+
     if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
       if (!this.isPaused) {
-        // pause everything but keep Esc listener alive
         this.physics.world.pause();
         this.time.paused = true;
         this.pauseText.setVisible(true);
         this.isPaused = true;
       } else {
-        // resume
         this.physics.world.resume();
         this.time.paused = false;
         this.pauseText.setVisible(false);
         this.isPaused = false;
       }
-      return; // skip the rest of update() in this frame
+      return;
     }
 
     if (this.physics.world.isPaused || this.isPaused || this.isGameOver) {
@@ -621,12 +845,15 @@ class FaseSecretaBossScene extends Phaser.Scene {
     }
   }
 
+  //----------------------------------------Itens----------------------------------------
+
+  //escudo
   activateShield() {
     if (this.isInvulnerable) return;
 
     // 1) Ativa o escudo visualmente e funcionalmente
     this.isInvulnerable = true;
-    this.iconHUD.setAlpha(0.5);
+    this.shieldIcon.setAlpha(0.5);
     this.player.setTint(0x00ffff);
 
     // 2) Depois de 1.5s, desativa o escudo
@@ -639,8 +866,54 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
         // 3) Após o cooldown, restaura o ícone HUD
         this.time.delayedCall(this.shieldCooldown, () => {
-        this.iconHUD.setAlpha(1);
+        this.shieldIcon.setAlpha(1);
         });
+    });
+  }
+
+  //tornado
+  activateTornado() {
+    if (this.isGameOver) return;
+
+    if (!this.boss || !this.boss.active) return;
+
+    const ang = Phaser.Math.Angle.Between(this.player.x, this.player.y, this.boss.x, this.boss.y);
+
+    const tornado = this.physics.add
+      .sprite(this.player.x, this.player.y, "tornado1")
+      .setScale(0.9);
+
+    tornado.anims.play("tornado_spin");
+    tornado.damage = 60; // ou o valor que quiser
+
+    this.physics.velocityFromRotation(ang, 400, tornado.body.velocity);
+
+    // Dano em inimigos normais
+    this.physics.add.overlap(tornado, this.enemies, (proj, enemy) => {
+      this.applyDamageToEnemy(enemy, proj.damage); // você pode definir essa função como quiser
+    });
+
+    // Dano no boss
+    if (this.boss && this.boss.active) {
+      this.physics.add.overlap(tornado, this.boss, (proj, boss) => {
+        this.bossTakeDamage(proj.damage);
+      });
+    }
+
+    tornado.setCollideWorldBounds(true);
+    tornado.body.onWorldBounds = true;
+    tornado.body.world.on("worldbounds", (body) => {
+      if (body.gameObject === tornado) tornado.destroy();
+    });
+
+    this.time.delayedCall(3000, () => {
+      if (tornado.active) tornado.destroy();
+    });
+
+    this.lastTornadoTime = this.time.now;
+    this.tornadoIcon.setAlpha(0.5);
+    this.time.delayedCall(this.tornadoCooldown, () => {
+      this.tornadoIcon.setAlpha(1);
     });
   }
 
