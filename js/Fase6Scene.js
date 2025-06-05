@@ -622,69 +622,41 @@ class Fase6Scene extends Phaser.Scene {
 
   // === novo método ===
   // dentro de Fase7Scene:
-  bossShoot() {
-    if (!this.boss.active || this.isGameOver) return;
+  bossShoot(boss) {
+    if (!boss.active || this.isGameOver) return;
 
-    // ângulo base em direção ao jogador
-    const baseAngle = Phaser.Math.Angle.Between(
-      this.boss.x, this.boss.y,
-      this.player.x, this.player.y
+    // 1) Cria o projétil sem escala ainda
+    const proj = this.miniBossProjectiles.create(boss.x, boss.y, "projetil");
+
+    // 2) Define um tamanho bem menor (ex: 20% do original)
+    proj.setScale(0.1);
+
+    // e reajusta a hitbox
+    proj.body.setSize(proj.displayWidth, proj.displayHeight);
+    proj.body.setOffset(
+      (proj.width - proj.displayWidth) / 2,
+      (proj.height - proj.displayHeight) / 2
     );
 
-    // vamos disparar 5 projéteis em leque (spread)
-    const spreadAngles = [
-      baseAngle,
-      baseAngle + Phaser.Math.DegToRad(15),
-      baseAngle - Phaser.Math.DegToRad(15),
-      baseAngle + Phaser.Math.DegToRad(30),
-      baseAngle - Phaser.Math.DegToRad(30),
-    ];
+    // 4) Dá dano menor, se quiser
+    proj.damage = 50;
 
-    spreadAngles.forEach((angle) => {
-      // 1) Cria o projétil usando o grupo this.bossProjectiles
-      const proj = this.bossProjectiles.create(
-        this.boss.x,
-        this.boss.y,
-        "projetil"
-      );
+    // 5) Velocidade em direção ao jogador
+    const angle = Phaser.Math.Angle.Between(
+      boss.x,
+      boss.y,
+      this.player.x,
+      this.player.y
+    );
+    this.physics.velocityFromRotation(angle, 300, proj.body.velocity);
 
-      // 2) Ajusta a escala para um tamanho “pequeno” (igual ao miniboss)
-      proj.setScale(0.1);
-
-      // 3) Reajusta a hitbox para caber no displayWidth/displayHeight
-      proj.body.setSize(proj.displayWidth, proj.displayHeight);
-      proj.body.setOffset(
-        (proj.width - proj.displayWidth) / 2,
-        (proj.height - proj.displayHeight) / 2
-      );
-
-      // 4) Define quanto dano o projétil causa
-      proj.damage = 50;
-
-      // 5) Calcula e aplica a velocidade em direção ao jogador
-      this.physics.velocityFromRotation(
-        angle,
-        300,               // velocidade em pixels/segundo
-        proj.body.velocity
-      );
-
-      // 6) Faz o projétil colidir com as bordas DO MUNDO e ser destruído ao tocá-las
-      proj.setCollideWorldBounds(true);
-      proj.body.onWorldBounds = true;
-      proj.body.world.on("worldbounds", (body) => {
-        if (body.gameObject === proj) {
-          proj.destroy();
-        }
-      });
-
-      // (Opcional) Se você quiser garantir que o projétil suma mesmo que não bata em nada,
-      // adicione um delayedCall igual ao da Fase6:
-      this.time.delayedCall(3000, () => {
-        if (proj.active) proj.destroy();
-      });
+    // 6) Faz o projétil “morrer” ao sair do mundo
+    proj.setCollideWorldBounds(true);
+    proj.body.onWorldBounds = true;
+    proj.body.world.on("worldbounds", (body) => {
+      if (body.gameObject === proj) proj.destroy();
     });
   }
-
 
   checkEnemiesInRange() {
     if (
