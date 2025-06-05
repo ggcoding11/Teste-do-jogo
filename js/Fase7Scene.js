@@ -28,7 +28,8 @@ class Fase7Scene extends Phaser.Scene {
 
   // chamado sempre que a cena inicia ou reinicia
   init() {
-    this.secondaryWeapon = null; // 'bow' | 'staff' | 'shield'
+    this.secondaryWeapon = "shield";
+    // 'bow' | 'staff' | 'shield'
     this.passiveFireTimer = null;
     this.isInvulnerable = false;
     this.wave = 1;
@@ -173,6 +174,9 @@ class Fase7Scene extends Phaser.Scene {
 
     this.tornadoKey = this.input.keyboard.addKey("Q"); // tecla Q pra ativar Tornado
 
+    this.setupSecondaryWeapon();
+    this.iconHUD.setTexture("icon_shield");
+
     // texto de fase
     const phaseText = this.add
       .text(width / 2, height - 280, "Fase Final - Traicao", {
@@ -195,18 +199,6 @@ class Fase7Scene extends Phaser.Scene {
     });
 
     // HUD: onda
-    this.waveText = this.add
-      .text(width / 2, 16, "Derrote o Boss!", {
-        fontFamily: '"Press Start 2P"',
-        fontSize: "24px",
-        color: "#ffffff",
-        backgroundColor: "rgba(0,0,0,0.5)",
-        padding: { x: 10, y: 5 },
-      })
-      .setOrigin(0.5, 0)
-      .setScrollFactor(0)
-      .setDepth(1000);
-
     // HUD: HP
     this.hpBarBackground = this.add
       .rectangle(20, 20, 200, 20, 0x444444)
@@ -225,6 +217,29 @@ class Fase7Scene extends Phaser.Scene {
         color: "#ffffff",
       })
       .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+
+    // HUD: Boss HP
+    this.bossHpBarBackground = this.add
+      .rectangle(this.scale.width / 2, 40, 400, 20, 0x444444)
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+
+    this.bossHpBar = this.add
+      .rectangle(this.scale.width / 2, 40, 400, 20, 0xff0000)
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+
+    this.bossHpText = this.add
+      .text(this.scale.width / 2, 30, "Boss: 100%", {
+        fontFamily: '"Press Start 2P"',
+        fontSize: "16px",
+        color: "#ffffff",
+      })
+      .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(1000);
 
@@ -294,6 +309,26 @@ class Fase7Scene extends Phaser.Scene {
 
     this.physics.add.overlap(
       this.player,
+      this.bossProjectiles,
+      (player, proj) => {
+        const now = this.time.now;
+        if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
+        this.lastDamageTime = now;
+
+        this.playerHealth = Math.max(0, this.playerHealth - proj.damage);
+        this.updateHPBar();
+        proj.destroy();
+
+        if (this.playerHealth <= 0) {
+          this.showGameOverScreen();
+        }
+      },
+      null,
+      this
+    );
+
+    this.physics.add.overlap(
+      this.player,
       this.powerUps,
       (player, drop) => this.pickupPowerUp(drop),
       null,
@@ -331,6 +366,19 @@ class Fase7Scene extends Phaser.Scene {
     const prog = this.playerXP / this.xpToNextLevel;
     this.xpBar.width = 200 * prog;
     this.xpText.setText(`XP: ${this.playerXP}/${this.xpToNextLevel}`);
+  }
+
+  updateBossHPBar() {
+    if (!this.boss || !this.boss.active) {
+      this.bossHpBar.setVisible(false);
+      this.bossHpBarBackground.setVisible(false);
+      this.bossHpText.setVisible(false);
+      return;
+    }
+
+    const pct = Math.floor((this.boss.health / 15000) * 100); // 15000 é a vida total
+    this.bossHpBar.width = 400 * (pct / 100);
+    this.bossHpText.setText(`Boss: ${pct}%`);
   }
 
   ganharXP(qtd) {
@@ -533,22 +581,20 @@ class Fase7Scene extends Phaser.Scene {
   // dentro de Fase7Scene:
   spawnFinalBoss() {
     const { width, height } = this.scale;
-    this.boss = this.physics.add
-      .sprite(width / 2, height / 4, "boss_final")
-      .setScale(0.3)
+    this.boss = this.enemies
+      .create(width / 2, height / 4, "boss_final")
+      .setScale(0.4)
       .setCollideWorldBounds(true);
-
-    this.boss.health = 15000; // boss final com muita vida
+    this.boss.health = 15000;
+    this.boss.damage = 50;
     this.boss.speed = 80;
 
-    // Atirar de tempos em tempos
     this.time.addEvent({
       delay: 2000,
       loop: true,
       callback: () => this.bossShoot(),
     });
 
-    // Invocar inimigos
     this.time.addEvent({
       delay: 8000,
       loop: true,
@@ -559,40 +605,44 @@ class Fase7Scene extends Phaser.Scene {
   bossShoot() {
     if (!this.boss.active || this.isGameOver) return;
 
+    const spreadAngle = Phaser.Math.DegToRad(60);
+    const numBullets = 3;
     const baseAngle = Phaser.Math.Angle.Between(
       this.boss.x,
       this.boss.y,
       this.player.x,
       this.player.y
     );
+    const angleStep = spreadAngle / (numBullets - 1);
+    const startAngle = baseAngle - spreadAngle / 2;
 
-    const angles = [
-      baseAngle,
-      baseAngle + Phaser.Math.DegToRad(15),
-      baseAngle - Phaser.Math.DegToRad(15),
-    ];
+    for (let i = 0; i < numBullets; i++) {
+      const angle = startAngle + i * angleStep;
 
-    angles.forEach((angle) => {
       const proj = this.bossProjectiles.create(
         this.boss.x,
         this.boss.y,
         "projetil_boss"
       );
-      proj.setScale(0.1);
+      proj.setScale(0.05);
       proj.damage = 50;
+
+      // 👇 Ajusta o tamanho da hitbox
+      proj.body.setSize(proj.width * proj.scaleX, proj.height * proj.scaleY);
+      proj.body.setOffset(0, 0);
 
       this.physics.velocityFromRotation(angle, 300, proj.body.velocity);
 
       proj.setCollideWorldBounds(true);
+
       proj.body.onWorldBounds = true;
       proj.body.world.on("worldbounds", (body) => {
         if (body.gameObject === proj) proj.destroy();
       });
-    });
+    }
   }
 
   summonEnemies() {
-    // Um contador de "ondas" que aumenta a força dos inimigos conforme passa o tempo
     if (!this.wave) this.wave = 1;
     else this.wave++;
 
@@ -601,21 +651,34 @@ class Fase7Scene extends Phaser.Scene {
       const x = this.boss.x + Math.cos(angle) * 400;
       const y = this.boss.y + Math.sin(angle) * 400;
 
+      // Escolhe um inimigo aleatório (enemy1, enemy2 ou enemy3)
+      const enemyTypes = ["enemy1", "enemy2", "enemy3"];
+      const enemyType = Phaser.Math.RND.pick(enemyTypes);
+
       const enemy = this.enemies
-        .create(x, y, "enemy3") // ou um sprite mais forte que quiser
-        .setScale(0.15)
+        .create(x, y, enemyType)
+        .setScale(0.1)
         .setCollideWorldBounds(true);
 
       // Escala a vida e o dano conforme a wave
-      const healthBase = 2000;
-      const damageBase = 100;
+      const healthBase = {
+        enemy1: 800,
+        enemy2: 1000,
+        enemy3: 1300,
+      };
 
-      // Aumenta 20% a cada "wave" (pode ajustar pra escalar mais rápido/slower)
+      const damageBase = {
+        enemy1: 55,
+        enemy2: 70,
+        enemy3: 90,
+      };
+
+      // Aumenta 20% a cada "wave" (pode ajustar esse fator se quiser mais lento/rápido)
       const scaleFactor = Math.pow(1.2, this.wave - 1);
 
-      enemy.health = Math.floor(healthBase * scaleFactor);
-      enemy.speed = 120; // velocidade pode ficar igual ou também aumentar, se quiser
-      enemy.damage = Math.floor(damageBase * scaleFactor);
+      enemy.health = Math.floor(healthBase[enemyType] * scaleFactor);
+      enemy.speed = 120; // pode mudar o speed por tipo se quiser
+      enemy.damage = Math.floor(damageBase[enemyType] * scaleFactor);
     }
   }
 
@@ -656,7 +719,7 @@ class Fase7Scene extends Phaser.Scene {
 
     this.physics.add.overlap(trail, this.enemies, (t, enemy) => {
       this.applyDamage(enemy);
-      this.physics.world.removeCollider(t.body);
+      // 👇 NÃO REMOVE O COLLIDER AQUI
     });
 
     this.tweens.add({
@@ -666,7 +729,7 @@ class Fase7Scene extends Phaser.Scene {
       alpha: 0,
       duration: 250,
       ease: "Linear",
-      onComplete: () => trail.destroy(),
+      onComplete: () => trail.destroy(), // <-- só destrói depois que ele termina o tween
     });
   }
 
