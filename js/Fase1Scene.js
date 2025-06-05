@@ -593,7 +593,7 @@ class Fase1Scene extends Phaser.Scene {
     this.miniBoss.speed = 80;
     this.miniBoss.damage = 40;
 
-    
+
 
     this.miniBoss.once("destroy", () => {
       const types = ["bow", "staff", "shield"];
@@ -903,6 +903,7 @@ class Fase1Scene extends Phaser.Scene {
 
     if (
       Phaser.Input.Keyboard.JustDown(this.tornadoKey) &&
+      this.secondaryWeapon === "bow" &&              // só dispara se tiver pego o “bow” (tornado)
       time - this.lastTornadoTime >= this.tornadoCooldown
     ) {
       this.activateTornado();

@@ -902,6 +902,7 @@ class Fase6Scene extends Phaser.Scene {
 
     if (
       Phaser.Input.Keyboard.JustDown(this.tornadoKey) &&
+      this.secondaryWeapon === "bow" &&              // só dispara se tiver pego o “bow” (tornado)
       time - this.lastTornadoTime >= this.tornadoCooldown
     ) {
       this.activateTornado();

@@ -96,7 +96,7 @@ class EnredoScene extends Phaser.Scene {
 
         startButton.on('pointerup', () => {
             this.enredoMusic.stop();
-            this.scene.start('Fase7Scene');
+            this.scene.start('Fase1Scene');
         });
     }
 }
