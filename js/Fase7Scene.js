@@ -68,7 +68,7 @@ class Fase7Scene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("fase6_bg", "assets/fase6.png");
+    this.load.image("fase7_bg", "assets/fase7.png");
     this.load.image("player", "assets/player.png");
     this.load.image("enemy1", "assets/enemy1.png");
     this.load.image("enemy2", "assets/enemy2.png");
@@ -88,7 +88,6 @@ class Fase7Scene extends Phaser.Scene {
     this.load.audio("morte7", "assets/morte7.mp3");
     this.load.audio("levelUp", "assets/level-up.mp3");
     this.load.image("projetil", "assets/projetil.png");
-    this.load.audio("musica_fase6", "assets/musica-fase6.mp3");
     this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
 
     // ícones de power‐up
@@ -137,7 +136,7 @@ class Fase7Scene extends Phaser.Scene {
     this.bossMusic.play();
 
     // cenário e limites
-    this.add.tileSprite(0, 0, mapSize, mapSize, "fase6_bg").setOrigin(0);
+    this.add.tileSprite(0, 0, mapSize, mapSize, "fase7_bg").setOrigin(0);
     this.physics.world.setBounds(0, 0, mapSize, mapSize);
     this.cameras.main.setBounds(0, 0, mapSize, mapSize);
 
@@ -536,7 +535,7 @@ class Fase7Scene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.boss = this.physics.add
       .sprite(width / 2, height / 4, "boss_final")
-      .setScale(0.2)
+      .setScale(0.3)
       .setCollideWorldBounds(true);
 
     this.boss.health = 15000; // boss final com muita vida
@@ -593,19 +592,30 @@ class Fase7Scene extends Phaser.Scene {
   }
 
   summonEnemies() {
+    // Um contador de "ondas" que aumenta a força dos inimigos conforme passa o tempo
+    if (!this.wave) this.wave = 1;
+    else this.wave++;
+
     for (let i = 0; i < 3; i++) {
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-      const x = this.boss.x + Math.cos(angle) * 300;
-      const y = this.boss.y + Math.sin(angle) * 300;
+      const x = this.boss.x + Math.cos(angle) * 400;
+      const y = this.boss.y + Math.sin(angle) * 400;
 
       const enemy = this.enemies
-        .create(x, y, "enemy1")
-        .setScale(0.08)
+        .create(x, y, "enemy3") // ou um sprite mais forte que quiser
+        .setScale(0.15)
         .setCollideWorldBounds(true);
 
-      enemy.health = 1000;
-      enemy.speed = 150;
-      enemy.damage = 50;
+      // Escala a vida e o dano conforme a wave
+      const healthBase = 2000;
+      const damageBase = 100;
+
+      // Aumenta 20% a cada "wave" (pode ajustar pra escalar mais rápido/slower)
+      const scaleFactor = Math.pow(1.2, this.wave - 1);
+
+      enemy.health = Math.floor(healthBase * scaleFactor);
+      enemy.speed = 120; // velocidade pode ficar igual ou também aumentar, se quiser
+      enemy.damage = Math.floor(damageBase * scaleFactor);
     }
   }
 
@@ -925,6 +935,20 @@ class Fase7Scene extends Phaser.Scene {
         .scale(e.speed);
       e.setVelocity(chase.x, chase.y);
     });
+
+    if (this.boss && this.boss.active) {
+      const bossChase = new Phaser.Math.Vector2(
+        this.player.x - this.boss.x,
+        this.player.y - this.boss.y
+      )
+        .normalize()
+        .scale(this.boss.speed); // Velocidade definida no spawnFinalBoss()
+
+      this.boss.setVelocity(bossChase.x, bossChase.y);
+
+      // Faz o boss virar de lado se precisar
+      this.boss.setFlipX(bossChase.x < 0);
+    }
   }
 
   showVictoryScreen() {
