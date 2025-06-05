@@ -61,6 +61,10 @@ class LoadingScene extends Phaser.Scene {
     this.load.image("tornado3", "assets/tornado3.png");
     this.load.image("tornado4", "assets/tornado4.png");
     this.load.image("staffProj", "assets/staff_proj.png"); // projétil do cajado
+    this.load.image("fase7_bg", "assets/fase7.png");
+    this.load.image("boss_final", "assets/boss-final.png"); // sprite do boss
+    this.load.image("projetil_boss", "assets/projetil_boss.png");
+    this.load.audio("boss_theme", "assets/boss_theme.mp3");
 
     // ícones de power‐up
     this.load.image("icon_tornado", "assets/icon_tornado.png");

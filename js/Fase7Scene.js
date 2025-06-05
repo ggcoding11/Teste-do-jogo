@@ -158,8 +158,6 @@ class Fase7Scene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys("W,A,S,D");
 
     // grupo de inimigos
-    this.enemies = this.physics.add.group();
-
     this.powerUps = this.physics.add.group(); // itens no chão
     this.shieldKey = this.input.keyboard.addKey("E"); // ativa escudo
     // HUD: espaço para ícone (fixo no canto)
@@ -311,6 +309,12 @@ class Fase7Scene extends Phaser.Scene {
       this.player,
       this.bossProjectiles,
       (player, proj) => {
+        // se escudo ativo, não leva dano
+        if (this.isInvulnerable) {
+          proj.destroy();
+          return;
+        }
+
         const now = this.time.now;
         if (now - this.lastDamageTime < this.invulnerabilityCooldown) return;
         this.lastDamageTime = now;
@@ -551,9 +555,9 @@ class Fase7Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      enemy1: { health: 800, speed: 190, damage: 55 },
-      enemy2: { health: 1000, speed: 170, damage: 70 },
-      enemy3: { health: 1300, speed: 140, damage: 90 },
+      enemy1: { health: 200, speed: 190, damage: 55 },
+      enemy2: { health: 250, speed: 170, damage: 70 },
+      enemy3: { health: 300, speed: 140, damage: 90 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];
@@ -581,13 +585,15 @@ class Fase7Scene extends Phaser.Scene {
   // dentro de Fase7Scene:
   spawnFinalBoss() {
     const { width, height } = this.scale;
-    this.boss = this.enemies
-      .create(width / 2, height / 4, "boss_final")
+    this.boss = this.physics.add
+      .sprite(width / 2, height / 4, "boss_final")
       .setScale(0.4)
       .setCollideWorldBounds(true);
     this.boss.health = 15000;
     this.boss.damage = 50;
     this.boss.speed = 80;
+
+    this.enemies.add(this.boss);
 
     this.time.addEvent({
       delay: 2000,
@@ -624,12 +630,18 @@ class Fase7Scene extends Phaser.Scene {
         this.boss.y,
         "projetil_boss"
       );
-      proj.setScale(0.05);
-      proj.damage = 50;
+      proj.setScale(0.03);
+      proj.damage = 15;
 
-      // 👇 Ajusta o tamanho da hitbox
-      proj.body.setSize(proj.width * proj.scaleX, proj.height * proj.scaleY);
-      proj.body.setOffset(0, 0);
+      // fazer a hitbox ter só metade do tamanho do sprite:
+      const spriteW = proj.width * proj.scaleX;
+      const spriteH = proj.height * proj.scaleY;
+      const hitboxW = spriteW * 0.5; // 50% da largura real
+      const hitboxH = spriteH * 0.5; // 50% da altura real
+
+      proj.body.setSize(hitboxW, hitboxH);
+      // centralizar a hitbox dentro do sprite:
+      proj.body.setOffset((spriteW - hitboxW) / 2, (spriteH - hitboxH) / 2);
 
       this.physics.velocityFromRotation(angle, 300, proj.body.velocity);
 
@@ -646,7 +658,7 @@ class Fase7Scene extends Phaser.Scene {
     if (!this.wave) this.wave = 1;
     else this.wave++;
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
       const x = this.boss.x + Math.cos(angle) * 400;
       const y = this.boss.y + Math.sin(angle) * 400;
@@ -657,14 +669,14 @@ class Fase7Scene extends Phaser.Scene {
 
       const enemy = this.enemies
         .create(x, y, enemyType)
-        .setScale(0.1)
+        .setScale(0.06)
         .setCollideWorldBounds(true);
 
       // Escala a vida e o dano conforme a wave
       const healthBase = {
-        enemy1: 800,
-        enemy2: 1000,
-        enemy3: 1300,
+        enemy1: 200,
+        enemy2: 250,
+        enemy3: 300,
       };
 
       const damageBase = {
@@ -674,7 +686,7 @@ class Fase7Scene extends Phaser.Scene {
       };
 
       // Aumenta 20% a cada "wave" (pode ajustar esse fator se quiser mais lento/rápido)
-      const scaleFactor = Math.pow(1.2, this.wave - 1);
+      const scaleFactor = Math.pow(1.05, this.wave - 1);
 
       enemy.health = Math.floor(healthBase[enemyType] * scaleFactor);
       enemy.speed = 120; // pode mudar o speed por tipo se quiser
@@ -683,20 +695,29 @@ class Fase7Scene extends Phaser.Scene {
   }
 
   checkEnemiesInRange() {
-    if (
-      this.enemies
-        .getChildren()
-        .some(
-          (e) =>
-            Phaser.Math.Distance.Between(
-              this.player.x,
-              this.player.y,
-              e.x,
-              e.y
-            ) < 150
-        )
-    )
+    // Is there any minion within 150px?
+    const anyMinionClose = this.enemies
+      .getChildren()
+      .some(
+        (e) =>
+          Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) <
+          150
+      );
+
+    // Is the boss close enough?
+    const bossClose =
+      this.boss &&
+      this.boss.active &&
+      Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        this.boss.x,
+        this.boss.y
+      ) < 150;
+
+    if (anyMinionClose || bossClose) {
       this.attack();
+    }
   }
 
   attack() {
@@ -719,7 +740,6 @@ class Fase7Scene extends Phaser.Scene {
 
     this.physics.add.overlap(trail, this.enemies, (t, enemy) => {
       this.applyDamage(enemy);
-      // 👇 NÃO REMOVE O COLLIDER AQUI
     });
 
     this.tweens.add({
@@ -733,15 +753,20 @@ class Fase7Scene extends Phaser.Scene {
     });
   }
 
-  applyDamage(enemy) {
+  applyDamage(target) {
     const dmg = Phaser.Math.Between(10, 30) + this.damageBonus;
-    enemy.health -= dmg;
-    this.showFloatingDamage(enemy.x, enemy.y, dmg);
-    if (enemy.health <= 0) {
-      const sfx = Phaser.Math.RND.pick(this.morteSounds);
-      sfx.play();
-      enemy.destroy();
-      this.ganharXP(10 + this.wave * 2);
+    target.health -= dmg;
+    this.showFloatingDamage(target.x, target.y, dmg);
+
+    if (target.health <= 0) {
+      if (this.enemies.contains(target)) {
+        const sfx = Phaser.Math.RND.pick(this.morteSounds);
+        sfx.play();
+        target.destroy();
+        this.ganharXP((10 + this.wave * 2) * 4);
+      } else if (target === this.boss) {
+        // boss morto, victory será detectado no update()
+      }
     }
   }
 
@@ -763,9 +788,12 @@ class Fase7Scene extends Phaser.Scene {
     });
   }
 
+  // Replace your existing getClosestEnemy with this:
   getClosestEnemy() {
-    let closest = null,
-      minD = Infinity;
+    let closest = null;
+    let minD = Infinity;
+
+    // 1) Check all regular enemies:
     this.enemies.getChildren().forEach((e) => {
       const d = Phaser.Math.Distance.Between(
         this.player.x,
@@ -778,6 +806,21 @@ class Fase7Scene extends Phaser.Scene {
         minD = d;
       }
     });
+
+    // 2) Also check the boss (if it’s alive):
+    if (this.boss && this.boss.active) {
+      const db = Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        this.boss.x,
+        this.boss.y
+      );
+      if (db < 180 && db < minD) {
+        closest = this.boss;
+        minD = db;
+      }
+    }
+
     return closest;
   }
 
@@ -963,6 +1006,7 @@ class Fase7Scene extends Phaser.Scene {
     }
 
     this.checkEnemiesInRange();
+    this.updateBossHPBar();
     this.updateHPBar();
 
     if (
@@ -1016,29 +1060,40 @@ class Fase7Scene extends Phaser.Scene {
 
   showVictoryScreen() {
     this.isGameOver = true;
-    this.bossMusic.stop();
+
+    // Para a música do boss, se estiver tocando
+    if (this.bossMusic) {
+      this.bossMusic.stop();
+    }
+
+    // Pausa a física e desativa controles, mas NÃO pausa `this.time`
+    this.physics.world.pause();
+    // this.time.paused = true;  // ← removido
+    this.input.keyboard.enabled = false;
 
     const { width, height } = this.scale;
 
+    // Overlay semitransparente por trás do texto
     this.add
       .rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setScrollFactor(0);
 
-    const menuBtn = this.add
-      .text(width / 2, height / 2 + 80, "Voltar ao Menu", {
+    // Texto centralizado de vitória
+    this.add
+      .text(width / 2, height / 2, "Você venceu, sua irmã foi salva!", {
         fontFamily: '"Press Start 2P"',
-        fontSize: "32px",
+        fontSize: "24px",
         color: "#ffffff",
-        backgroundColor: "rgba(0,0,0,0.7)",
-        padding: { x: 20, y: 10 },
+        align: "center",
+        wordWrap: { width: width - 40 },
       })
       .setOrigin(0.5)
-      .setInteractive();
+      .setScrollFactor(0);
 
-    menuBtn.on("pointerdown", () => {
-      this.scene.start("TitleScene"); // ou sua cena de menu principal
+    // Após 3 segundos, volta automaticamente para o menu principal
+    this.time.delayedCall(3000, () => {
+      this.scene.start("TitleScene");
     });
-
-    // Botão de voltar ao menu
   }
 }
