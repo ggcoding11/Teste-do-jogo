@@ -471,7 +471,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
           const proj = this.bossProjectiles.create(xInicial, y, "escorpiao");
           proj.setVelocityX(velX);
-          proj.setScale(0.5);
+          proj.setScale(0.125);
           proj.damage = 15;
 
           this.time.delayedCall(4000, () => {
@@ -578,7 +578,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
           // 3. Cria projétil na borda esquerda
           const proj = this.bossProjectiles.create(-50, y, "escorpiao");
           proj.setVelocityX(400); // velocidade para a direita
-          proj.setScale(0.5);
+          proj.setScale(0.125);
           proj.damage = 15;
 
           // Destroi se sair da tela
@@ -697,7 +697,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
       const velocity = this.physics.velocityFromRotation(angle, 300);
 
       const proj = this.bossProjectiles.create(this.boss.x, this.boss.y, "zip");
-      proj.setScale(0.075);
+      proj.setScale(0.055);
       proj.setVelocity(velocity.x, velocity.y);
       proj.damage = 15;
 

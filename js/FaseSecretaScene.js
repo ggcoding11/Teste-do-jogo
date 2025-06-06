@@ -24,7 +24,7 @@ class FaseSecretaScene extends Phaser.Scene {
 
         // Título no topo
         this.add
-            .text(width / 2, 40, 'História', {
+            .text(width / 2, 40, '???', {
                 fontFamily: '"Press Start 2P"',
                 fontSize: '32px',
                 fill: '#ffffff'
@@ -33,9 +33,9 @@ class FaseSecretaScene extends Phaser.Scene {
 
         // Configurações do card de enredo
         const cardWidth = width * 0.8;
-        const cardHeight = height * 0.5;
+        const cardHeight = height * 0.80;
         const startY = height + cardHeight / 2; // Começa abaixo da tela
-        const targetY = height * 0.4; // Posiciona o card mais para cima (40% da altura)
+        const targetY = height * 0.475; // Posiciona o card mais para cima (40% da altura)
 
         // Container para o card
         const storyContainer = this.add.container(width / 2, startY);
@@ -56,7 +56,29 @@ class FaseSecretaScene extends Phaser.Scene {
         const storyText = this.add.text(
             -cardWidth / 2 + 20,
             -cardHeight / 2 + 20,
-            `Fase secreta ativada.`,
+            `Ao andar pelas ruínas de um castelo, você escuta através das paredes uma conversa entre dois demônios que aparentemente não perceberam sua presença.
+            
+            1º — Você ouviu? A sala se abriu de novo. Aquela... A outra sala
+
+            2º — A que foi selada por trezentos anos? Onde aquele ser ficou preso?
+
+           1º — Ele não foi preso. Ficou. Por vontade própria. Disse que só sairia quando alguém digno aparecesse.
+
+           2º — Digno? Digno de quê?
+
+           1º — Digno de conseguir.. descompactar um arquivo .zip...
+
+           2º — E o que isso quer dizer?
+
+           1º — E eu tenho cara de quem sabe?
+           
+           2º — É, tem razão, porque eu achei que um idiota como você saberia?
+           
+           Antes mesmo de conseguir retrucar, ambos são interrompidos por uma terceira voz.
+           
+           3º — VOCÊS.. VOLTEM JÁ A SEUS POSTOS E PAREM DE TAGARELAR.
+           
+           A conversa se encerra sem mais nenhum ruído, você segue em frente.`,
             {
                 font: '22px Arial',
                 fill: '#ffffff',
