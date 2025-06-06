@@ -585,7 +585,7 @@ class Fase1Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * dist;
 
     this.miniBoss = this.enemies
-      .create(x, y, "miniboss1")
+      .create(x, y, "luxuriaBoss")
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 

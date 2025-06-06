@@ -70,10 +70,10 @@ class Fase3Scene extends Phaser.Scene {
   preload() {
     this.load.image("fase3_bg", "assets/fase3.png");
     this.load.image("player", "assets/player.png");
-    this.load.image("enemy1", "assets/enemy1.png");
-    this.load.image("enemy2", "assets/enemy2.png");
-    this.load.image("enemy3", "assets/enemy3.png");
-    this.load.image("miniboss1", "assets/miniboss1.png");
+    this.load.image("avareza1", "assets/avareza-inimigo1.png");
+    this.load.image("avareza2", "assets/avareza-inimigo2.png");
+    this.load.image("avareza3", "assets/avareza-inimigo3.png");
+    this.load.image("avarezaBoss", "assets/avareza_boss.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
@@ -551,9 +551,9 @@ class Fase3Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      enemy1: { health: 350, speed: 150, damage: 20 },
-      enemy2: { health: 500, speed: 140, damage: 30 },
-      enemy3: { health: 800, speed: 100, damage: 45 },
+      avareza1: { health: 350, speed: 150, damage: 20 },
+      avareza2: { health: 500, speed: 140, damage: 30 },
+      avareza3: { health: 800, speed: 100, damage: 45 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];
@@ -584,7 +584,7 @@ class Fase3Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * dist;
 
     this.miniBoss = this.enemies
-      .create(x, y, "miniboss1")
+      .create(x, y, "avarezaBoss")
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 

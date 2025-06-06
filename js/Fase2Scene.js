@@ -70,10 +70,10 @@ class Fase2Scene extends Phaser.Scene {
   preload() {
     this.load.image("fase2_bg", "assets/fase2.png");
     this.load.image("player", "assets/player.png");
-    this.load.image("enemy1", "assets/enemy1.png");
-    this.load.image("enemy2", "assets/enemy2.png");
-    this.load.image("enemy3", "assets/enemy3.png");
-    this.load.image("miniboss1", "assets/miniboss1.png");
+    this.load.image("gula1", "assets/gula-inimigo1.png");
+    this.load.image("gula2", "assets/gula-inimigo2.png");
+    this.load.image("gula3", "assets/gula-inimigo3.png");
+    this.load.image("gulaBoss", "assets/gula_boss.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
@@ -553,9 +553,9 @@ class Fase2Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      enemy1: { health: 300, speed: 140, damage: 15 },
-      enemy2: { health: 450, speed: 120, damage: 25 },
-      enemy3: { health: 700, speed: 90, damage: 35 },
+      gula1: { health: 300, speed: 140, damage: 15 },
+      gula2: { health: 450, speed: 120, damage: 25 },
+      gula3: { health: 700, speed: 90, damage: 35 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];
@@ -586,7 +586,7 @@ class Fase2Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * dist;
 
     this.miniBoss = this.enemies
-      .create(x, y, "miniboss1")
+      .create(x, y, "gulaBoss")
       .setScale(this.player.scaleX * 2)
       .setCollideWorldBounds(true);
 

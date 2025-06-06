@@ -71,10 +71,10 @@ class Fase7Scene extends Phaser.Scene {
   preload() {
     this.load.image("fase7_bg", "assets/fase7.png");
     this.load.image("player", "assets/player.png");
-    this.load.image("enemy1", "assets/enemy1.png");
-    this.load.image("enemy2", "assets/enemy2.png");
-    this.load.image("enemy3", "assets/enemy3.png");
-    this.load.image("boss_final", "assets/boss-final.png"); // sprite do boss
+    this.load.image("traicao1", "assets/traicao-inimigo1.png");
+    this.load.image("traicao2", "assets/traicao-inimigo2.png");
+    this.load.image("traicao3", "assets/traicao-inimigo3.png");
+    this.load.image("traicaoBoss", "assets/traicao_boss.png"); // sprite do boss
     this.load.image("projetil_boss", "assets/projetil_boss.png");
     this.load.audio("boss_theme", "assets/boss_theme.mp3");
     this.load.image("miniboss1", "assets/miniboss1.png");
@@ -555,9 +555,9 @@ class Fase7Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      enemy1: { health: 200, speed: 190, damage: 55 },
-      enemy2: { health: 250, speed: 170, damage: 70 },
-      enemy3: { health: 300, speed: 140, damage: 90 },
+      traicao1: { health: 200, speed: 190, damage: 55 },
+      traicao2: { health: 250, speed: 170, damage: 70 },
+      traicao3: { health: 300, speed: 140, damage: 90 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];
@@ -586,7 +586,7 @@ class Fase7Scene extends Phaser.Scene {
   spawnFinalBoss() {
     const { width, height } = this.scale;
     this.boss = this.physics.add
-      .sprite(width / 2, height / 4, "boss_final")
+      .sprite(width / 2, height / 4, "traicaoBoss")
       .setScale(0.4)
       .setCollideWorldBounds(true);
     this.boss.health = 15000;
@@ -663,8 +663,8 @@ class Fase7Scene extends Phaser.Scene {
       const x = this.boss.x + Math.cos(angle) * 400;
       const y = this.boss.y + Math.sin(angle) * 400;
 
-      // Escolhe um inimigo aleatório (enemy1, enemy2 ou enemy3)
-      const enemyTypes = ["enemy1", "enemy2", "enemy3"];
+      // Escolhe um inimigo aleatório (traicao1, traicao2 ou traicao3)
+      const enemyTypes = ["traicao1", "traicao2", "traicao3"];
       const enemyType = Phaser.Math.RND.pick(enemyTypes);
 
       const enemy = this.enemies
@@ -674,15 +674,15 @@ class Fase7Scene extends Phaser.Scene {
 
       // Escala a vida e o dano conforme a wave
       const healthBase = {
-        enemy1: 200,
-        enemy2: 250,
-        enemy3: 300,
+        traicao1: 200,
+        traicao2: 250,
+        traicao3: 300,
       };
 
       const damageBase = {
-        enemy1: 55,
-        enemy2: 70,
-        enemy3: 90,
+        traicao1: 55,
+        traicao2: 70,
+        traicao3: 90,
       };
 
       // Aumenta 20% a cada "wave" (pode ajustar esse fator se quiser mais lento/rápido)
