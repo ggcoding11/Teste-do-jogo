@@ -70,10 +70,10 @@ class Fase1Scene extends Phaser.Scene {
   preload() {
     this.load.image("fase1_bg", "assets/fase1.png");
     this.load.image("player", "assets/player.png");
-    this.load.image("enemy1", "assets/enemy1.png");
-    this.load.image("enemy2", "assets/enemy2.png");
-    this.load.image("enemy3", "assets/enemy3.png");
-    this.load.image("miniboss1", "assets/miniboss1.png");
+    this.load.image("luxuria1", "assets/luxuria-inimigo1.png");
+    this.load.image("luxuria2", "assets/luxuria-inimigo2.png");
+    this.load.image("luxuria3", "assets/luxuria-inimigo3.png");
+    this.load.image("luxuriaBoss", "assets/luxuria_boss.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
@@ -552,9 +552,9 @@ class Fase1Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      enemy1: { health: 250, speed: 130, damage: 10 },
-      enemy2: { health: 400, speed: 120, damage: 20 },
-      enemy3: { health: 600, speed: 80, damage: 30 },
+      luxuria1: { health: 250, speed: 130, damage: 10 },
+      luxuria2: { health: 400, speed: 120, damage: 20 },
+      luxuria3: { health: 600, speed: 80, damage: 30 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];

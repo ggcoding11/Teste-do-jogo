@@ -27,7 +27,6 @@ class LoadingScene extends Phaser.Scene {
       progressFill.width = 400 * value;
     });
 
-    // Carregar todos os assets necessários
     this.load.image("fase1_bg", "assets/fase1.png");
     this.load.image("fase2_bg", "assets/fase2.png");
     this.load.image("fase3_bg", "assets/fase3.png");
@@ -35,10 +34,42 @@ class LoadingScene extends Phaser.Scene {
     this.load.image("fase5_bg", "assets/fase5.png");
     this.load.image("fase6_bg", "assets/fase6.png");
     this.load.image("player", "assets/player.png");
-    this.load.image("enemy1", "assets/enemy1.png");
-    this.load.image("enemy2", "assets/enemy2.png");
-    this.load.image("enemy3", "assets/enemy3.png");
-    this.load.image("miniboss1", "assets/miniboss1.png");
+
+    this.load.image("luxuria1", "assets/luxuria-inimigo1.png");
+    this.load.image("luxuria2", "assets/luxuria-inimigo2.png");
+    this.load.image("luxuria3", "assets/luxuria-inimigo3.png");
+    this.load.image("luxuriaBoss", "assets/luxuria_boss.png");
+
+    this.load.image("gula1", "assets/gula-inimigo1.png");
+    this.load.image("gula2", "assets/gula-inimigo2.png");
+    this.load.image("gula3", "assets/gula-inimigo3.png");
+    this.load.image("gulaBoss", "assets/gula_boss.png");
+
+    this.load.image("avareza1", "assets/avareza-inimigo1.png");
+    this.load.image("avareza2", "assets/avareza-inimigo2.png");
+    this.load.image("avareza3", "assets/avareza-inimigo3.png");
+    this.load.image("avarezaBoss", "assets/avareza_boss.png");
+
+    this.load.image("ira1", "assets/ira-inimigo1.png");
+    this.load.image("ira2", "assets/ira-inimigo2.png");
+    this.load.image("ira3", "assets/ira-inimigo3.png");
+    this.load.image("iraBoss", "assets/ira_boss.png");
+
+    this.load.image("violencia1", "assets/violencia-inimigo1.png");
+    this.load.image("violencia2", "assets/violencia-inimigo2.png");
+    this.load.image("violencia3", "assets/violencia-inimigo3.png");
+    this.load.image("violenciaBoss", "assets/violencia_boss.png");
+
+    this.load.image("fraude1", "assets/fraude-inimigo1.png");
+    this.load.image("fraude2", "assets/fraude-inimigo2.png");
+    this.load.image("fraude3", "assets/fraude-inimigo3.png");
+    this.load.image("fraudeBoss", "assets/fraude_boss.png");
+
+    this.load.image("traicao1", "assets/traicao-inimigo1.png");
+    this.load.image("traicao2", "assets/traicao-inimigo2.png");
+    this.load.image("traicao3", "assets/traicao-inimigo3.png");
+    this.load.image("traicaoBoss", "assets/traicao_boss.png");
+
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
