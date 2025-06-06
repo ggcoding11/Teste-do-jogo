@@ -60,7 +60,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
     this.load.audio("levelUp", "assets/level-up.mp3");
-    this.load.audio("musica_fase1", "assets/musica-fase1.mp3");
+    this.load.audio("gasoline", "assets/gasoline.mp3");
     this.load.image("icon_shield", "assets/icon_shield.png");
     this.load.image("hugo_boss", "assets/hugo_boss.png");
     this.load.image("bossProj", "assets/boss_proj.png");
@@ -87,7 +87,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
     const mapWidth = this.scale.width;
     const mapHeight = this.scale.height;
 
-    this.fase1Music = this.sound.add("musica_fase1", {
+    this.fase1Music = this.sound.add("gasoline", {
       loop: true,
       volume: 0.5,
     });

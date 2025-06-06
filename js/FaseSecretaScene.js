@@ -5,8 +5,8 @@ class FaseSecretaScene extends Phaser.Scene {
 
     preload() {
         // Carrega a imagem de fundo do enredo
-        this.load.image('storyBg', 'assets/foto-enredo.png');
-        this.load.audio("musica_enredo", "assets/musica-enredo.mp3");
+        this.load.image('storyBg', 'assets/foto-enredo2.png');
+        this.load.audio("musica_enredo", "assets/musica-enredo2.mp3");
     }
 
     create() {

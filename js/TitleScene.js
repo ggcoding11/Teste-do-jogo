@@ -14,6 +14,7 @@ class TitleScene extends Phaser.Scene {
   preload() {
     this.load.image('title_bg', 'assets/bg.png'); // imagem da tela inicial
     this.load.audio('menu_music', 'assets/musica-menu-titulo.mp3');
+    this.load.audio('secret_passage', 'assets/passagem.mp3');
   }
 
   create() {
@@ -53,6 +54,13 @@ class TitleScene extends Phaser.Scene {
     if (JSON.stringify(this.inputSequence) === JSON.stringify(this.konamiCode)) {
       this.konamiActivated = true;
       console.log("Código Konami ativado!");
+
+      this.menuMusic.stop();
+
+      this.sound.play('secret_passage', { volume: 0.2 });
+
+      // Opcional: impedir múltiplas ativações
+      this.inputSequence = []; 
     }
     });
 
