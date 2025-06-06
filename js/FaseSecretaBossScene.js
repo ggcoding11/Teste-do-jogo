@@ -55,7 +55,7 @@ class FaseSecretaBossScene extends Phaser.Scene {
 
   preload() {
     this.load.image("chao", "assets/chão.png");
-    this.load.image("player", "assets/player.png");
+    this.load.image("player", "assets/player2.png");
     this.load.image("rastro", "assets/rastro.png");
     this.load.audio("sfxCut", "assets/sfx-corte.mp3");
     this.load.audio("morte1", "assets/morte1.mp3");
