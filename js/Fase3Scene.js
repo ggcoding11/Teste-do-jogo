@@ -48,7 +48,7 @@ class Fase3Scene extends Phaser.Scene {
 
     this.staffDamage = 25; // por projétil
     this.staffCooldown = 1700;
-    this.bowDamage = 80;
+    this.bowDamage = 120;
     this.bowCooldown = 1200; // mais lento
 
     this.playerXP = 0;

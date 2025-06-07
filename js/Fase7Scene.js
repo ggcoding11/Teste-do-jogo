@@ -631,7 +631,7 @@ class Fase7Scene extends Phaser.Scene {
         "projetil_boss"
       );
       proj.setScale(0.03);
-      proj.damage = 15;
+      proj.damage = 32;
 
       // fazer a hitbox ter só metade do tamanho do sprite:
       const spriteW = proj.width * proj.scaleX;
