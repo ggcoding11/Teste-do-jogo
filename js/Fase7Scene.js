@@ -555,9 +555,9 @@ class Fase7Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      traicao1: { health: 200, speed: 190, damage: 55 },
-      traicao2: { health: 250, speed: 170, damage: 70 },
-      traicao3: { health: 300, speed: 140, damage: 90 },
+      traicao1: { health: 200, speed: 190, damage: 55, scale: 0.3 },
+      traicao2: { health: 250, speed: 170, damage: 70, scale: 0.4 },
+      traicao3: { health: 300, speed: 140, damage: 90, scale: 0.5 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];
@@ -573,7 +573,7 @@ class Fase7Scene extends Phaser.Scene {
 
     const e = this.enemies
       .create(x, y, key)
-      .setScale(this.player.scaleX)
+      .setScale(base.scale)
       .setCollideWorldBounds(true);
 
     e.health = enemyHealth;
@@ -587,7 +587,7 @@ class Fase7Scene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.boss = this.physics.add
       .sprite(width / 2, height / 4, "traicaoBoss")
-      .setScale(0.4)
+      .setScale(0.45)
       .setCollideWorldBounds(true);
     this.boss.health = 15000;
     this.boss.damage = 50;
@@ -958,6 +958,13 @@ class Fase7Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    this.enemies.getChildren().forEach(enemy => {
+        if (enemy.body.velocity.x < 0) {
+         enemy.setFlipX(true);  // virado para a esquerda
+        } else {
+          enemy.setFlipX(false); // virado para a direita
+        }
+      });
     if (
       Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
       this.secondaryWeapon === "shield" &&
