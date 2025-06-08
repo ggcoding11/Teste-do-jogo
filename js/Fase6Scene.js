@@ -552,9 +552,9 @@ class Fase6Scene extends Phaser.Scene {
     const y = this.player.y + Math.sin(ang) * Phaser.Math.Between(minD, maxD);
 
     const statsMap = {
-      fraude1: { health: 800, speed: 190, damage: 55 },
-      fraude2: { health: 1000, speed: 170, damage: 70 },
-      fraude3: { health: 1300, speed: 140, damage: 90 },
+      fraude1: { health: 800, speed: 190, damage: 55, scale: 0.2 },
+      fraude2: { health: 1000, speed: 170, damage: 70, scale: 0.15 },
+      fraude3: { health: 1300, speed: 140, damage: 90, scale: 0.2 },
     };
     const key = Phaser.Math.RND.pick(Object.keys(statsMap));
     const base = statsMap[key];
@@ -570,7 +570,7 @@ class Fase6Scene extends Phaser.Scene {
 
     const e = this.enemies
       .create(x, y, key)
-      .setScale(this.player.scaleX)
+      .setScale(base.scale)
       .setCollideWorldBounds(true);
 
     e.health = enemyHealth;
@@ -891,6 +891,13 @@ class Fase6Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    this.enemies.getChildren().forEach(enemy => {
+        if (enemy.body.velocity.x < 0) {
+         enemy.setFlipX(true);  // virado para a esquerda
+        } else {
+          enemy.setFlipX(false); // virado para a direita
+        }
+      });
     if (
       Phaser.Input.Keyboard.JustDown(this.shieldKey) &&
       this.secondaryWeapon === "shield" &&
