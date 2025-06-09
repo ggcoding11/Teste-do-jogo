@@ -19,7 +19,7 @@ Aurelian Voss fez um pacto com Lúcifer em troca de sabedoria e imortalidade, en
   * **Tornado** (Tecla `Q`): Gera um turbilhão que pode ferir vários inimigos de uma vez.
   * **Cajado** (Automático): Solta diversos projéteis em um certo raio nos inimigos.
 * **Progressão por Ondas**: Sobreviva a múltiplas ondas de inimigos em cada fase.
-* **Upgrades**: Escolha melhorias de dano, velocidade, vida, regeneração e mais ao final de cada fase.
+* **Upgrades**: Escolha melhorias de dano, velocidade, vida e regeneração.
 
 ---
 
